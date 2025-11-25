@@ -9,16 +9,16 @@ export class AlertsController {
 
     @Post()
     create(@Request() req: any, @Body() createAlertDto: { type: string; token: string; price: number }) {
-        return this.alertsService.create(req.user.userId, createAlertDto);
+        return this.alertsService.create(req.user.id, createAlertDto);
     }
 
     @Get()
     findAll(@Request() req: any) {
-        return this.alertsService.findAll(req.user.userId);
+        return this.alertsService.findAll(req.user.id);
     }
 
     @Delete(':id')
     remove(@Request() req: any, @Param('id') id: string) {
-        return this.alertsService.remove(id, req.user.userId);
+        return this.alertsService.remove(id, req.user.id);
     }
 }

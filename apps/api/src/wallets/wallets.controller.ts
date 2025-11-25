@@ -9,16 +9,16 @@ export class WalletsController {
 
     @Post()
     create(@Request() req: any, @Body() createWalletDto: { address: string; chain: string; label?: string }) {
-        return this.walletsService.create(req.user.userId, createWalletDto);
+        return this.walletsService.create(req.user.id, createWalletDto);
     }
 
     @Get()
     findAll(@Request() req: any) {
-        return this.walletsService.findAll(req.user.userId);
+        return this.walletsService.findAll(req.user.id);
     }
 
     @Delete(':id')
     remove(@Request() req: any, @Param('id') id: string) {
-        return this.walletsService.remove(id, req.user.userId);
+        return this.walletsService.remove(id, req.user.id);
     }
 }

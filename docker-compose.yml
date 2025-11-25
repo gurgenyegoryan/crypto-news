@@ -93,6 +93,8 @@ services:
       DATABASE_URL: postgres://${DB_USER:-postgres}:${DB_PASSWORD:-postgres}@postgres:5432/${DB_NAME:-cryptomonitor}
       REDIS_HOST: redis
       REDIS_PORT: 6379
+      TELEGRAM_BOT_TOKEN: 8244781862:AAGcdsGEy0vdb39ksus55ATUhBcmSqv_vRY
+      JWT_SECRET: 07140530688366544491071eba37720f
 
     networks:
       - cryptomonitor-network

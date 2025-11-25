@@ -10,7 +10,7 @@ export default function DashboardContent() {
     const [activeTab, setActiveTab] = useState("Portfolio");
     const { user, isAuthenticated, updateProfile } = useAuth();
     const router = useRouter();
-    const [showModal, setShowModal] = useState<"alert" | "wallet" | null>(null);
+    const [showModal, setShowModal] = useState<"alert" | "wallet" | "payment" | null>(null);
     const [saveSuccess, setSaveSuccess] = useState(false);
 
     useEffect(() => {
@@ -23,11 +23,14 @@ export default function DashboardContent() {
 
     // State for dynamic data
     const [alerts, setAlerts] = useState<{ id: string; token: string; price: string; active: boolean }[]>([]);
-    const [wallets, setWallets] = useState<{ id: string; address: string; label: string }[]>([]);
+    const [wallets, setWallets] = useState<{ id: string; address: string; label: string; balance?: string; chain?: string }[]>([]);
+    const [whaleTransactions, setWhaleTransactions] = useState<{ hash: string; from: string; to: string; value: string; token: string; timestamp: number; chain: string }[]>([]);
 
     // Form state
-    const [newAlert, setNewAlert] = useState({ token: "", price: "" });
-    const [newWallet, setNewWallet] = useState({ address: "", label: "" });
+    const [newAlert, setNewAlert] = useState({ token: "", price: "", type: "above" as "above" | "below" });
+    const [newWallet, setNewWallet] = useState({ address: "", label: "", chain: "ETH" });
+    const [paymentTxHash, setPaymentTxHash] = useState("");
+    const [isPremium, setIsPremium] = useState(false);
 
     // Settings state
     const [settings, setSettings] = useState({
@@ -40,55 +43,171 @@ export default function DashboardContent() {
     const [profileName, setProfileName] = useState("");
     const [profileEmail, setProfileEmail] = useState("");
 
+    const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
+
     useEffect(() => {
         if (user) {
             setProfileName(user.name);
             setProfileEmail(user.email);
+            // Check if user is premium (assuming user object has tier, if not we might need to fetch profile again)
+            // For now, let's assume we can fetch the latest user profile
+            fetchUserProfile();
         }
     }, [user]);
 
-    // Load settings
-    useEffect(() => {
-        const storedSettings = localStorage.getItem("user_settings");
-        if (storedSettings) setSettings(JSON.parse(storedSettings));
-    }, []);
+    const fetchUserProfile = async () => {
+        const token = localStorage.getItem("auth_token");
+        if (!token) return;
+        try {
+            const res = await fetch(`${API_URL}/auth/me`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (res.ok) {
+                const data = await res.json();
+                setIsPremium(data.tier === 'premium');
+            }
+        } catch (e) {
+            console.error("Failed to fetch user profile", e);
+        }
+    };
 
-    // Save settings
-    useEffect(() => {
-        localStorage.setItem("user_settings", JSON.stringify(settings));
-    }, [settings]);
+    const fetchWallets = async () => {
+        const token = localStorage.getItem("auth_token");
+        if (!token) return;
+        try {
+            const res = await fetch(`${API_URL}/wallets`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (res.ok) {
+                const data = await res.json();
+                setWallets(data);
+            }
+        } catch (e) {
+            console.error("Failed to fetch wallets", e);
+        }
+    };
 
-    // Load data from localStorage on mount
+    const fetchWhaleTransactions = async () => {
+        // Public endpoint, but let's use token if needed
+        try {
+            const res = await fetch(`${API_URL}/whale-watch`);
+            if (res.ok) {
+                const data = await res.json();
+                setWhaleTransactions(data);
+            }
+        } catch (e) {
+            console.error("Failed to fetch whale transactions", e);
+        }
+    };
+
+    // Load data on mount
     useEffect(() => {
         const storedAlerts = localStorage.getItem("user_alerts");
-        const storedWallets = localStorage.getItem("user_wallets");
         if (storedAlerts) setAlerts(JSON.parse(storedAlerts));
-        if (storedWallets) setWallets(JSON.parse(storedWallets));
-    }, []);
+
+        if (isAuthenticated) {
+            fetchWallets();
+            fetchWhaleTransactions();
+        }
+    }, [isAuthenticated]);
 
     // Save data when updated
     useEffect(() => {
         localStorage.setItem("user_alerts", JSON.stringify(alerts));
     }, [alerts]);
 
-    useEffect(() => {
-        localStorage.setItem("user_wallets", JSON.stringify(wallets));
-    }, [wallets]);
-
-    const handleCreateAlert = () => {
+    const handleCreateAlert = async () => {
         if (!newAlert.token || !newAlert.price) return;
-        const alert = { id: Date.now().toString(), token: newAlert.token, price: newAlert.price, active: true };
-        setAlerts([...alerts, alert]);
-        setNewAlert({ token: "", price: "" });
-        setShowModal(null);
+
+        const token = localStorage.getItem("auth_token");
+        if (!token) return;
+
+        try {
+            const res = await fetch(`${API_URL}/alerts`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    token: newAlert.token,
+                    price: parseFloat(newAlert.price),
+                    type: newAlert.type
+                })
+            });
+
+            if (res.ok) {
+                const alert = await res.json();
+                setAlerts([...alerts, { ...alert, active: true }]);
+                setNewAlert({ token: "", price: "", type: "above" });
+                setShowModal(null);
+            }
+        } catch (e) {
+            console.error("Error creating alert", e);
+        }
     };
 
-    const handleAddWallet = () => {
+    const handleAddWallet = async () => {
         if (!newWallet.address) return;
-        const wallet = { id: Date.now().toString(), address: newWallet.address, label: newWallet.label || "My Wallet" };
-        setWallets([...wallets, wallet]);
-        setNewWallet({ address: "", label: "" });
-        setShowModal(null);
+
+        const token = localStorage.getItem("auth_token");
+        if (!token) return;
+
+        try {
+            const res = await fetch(`${API_URL}/wallets`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    address: newWallet.address,
+                    label: newWallet.label || "My Wallet",
+                    chain: newWallet.chain
+                })
+            });
+
+            if (res.ok) {
+                await fetchWallets(); // Refresh list
+                setNewWallet({ address: "", label: "", chain: "ETH" });
+                setShowModal(null);
+            } else {
+                alert("Failed to add wallet");
+            }
+        } catch (e) {
+            console.error("Error adding wallet", e);
+            alert("Error adding wallet");
+        }
+    };
+
+    const handleVerifyPayment = async () => {
+        if (!paymentTxHash) return;
+        const token = localStorage.getItem("auth_token");
+        if (!token) return;
+
+        try {
+            const res = await fetch(`${API_URL}/payments/verify`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ txHash: paymentTxHash })
+            });
+
+            if (res.ok) {
+                const data = await res.json();
+                alert(data.message);
+                setIsPremium(true);
+                setShowModal(null);
+                setPaymentTxHash("");
+            } else {
+                alert("Payment verification failed. Please check the hash.");
+            }
+        } catch (e) {
+            console.error("Payment verification error", e);
+            alert("Error verifying payment");
+        }
     };
 
     const handleSaveSettings = () => {
@@ -153,31 +272,33 @@ export default function DashboardContent() {
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-white/10">
-                                        {[
-                                            { name: "Ethereum", symbol: "ETH", price: "$3,020.50", balance: "2.5", value: "$7,551.25", change: "+1.2%" },
-                                            { name: "Solana", symbol: "SOL", price: "$145.20", balance: "45", value: "$6,534.00", change: "+5.4%" },
-                                            { name: "USDC", symbol: "USDC", price: "$1.00", balance: "1,200", value: "$1,200.00", change: "0.0%" },
-                                        ].map((asset, i) => (
-                                            <tr key={i} className="hover:bg-white/5 transition-colors">
-                                                <td className="px-6 py-4">
-                                                    <div className="flex items-center gap-3">
-                                                        <div className="w-8 h-8 rounded-full bg-gray-700 flex items-center justify-center text-xs font-bold">
-                                                            {asset.symbol[0]}
-                                                        </div>
-                                                        <div>
-                                                            <div className="font-medium">{asset.name}</div>
-                                                            <div className="text-xs text-gray-500">{asset.symbol}</div>
-                                                        </div>
-                                                    </div>
-                                                </td>
-                                                <td className="px-6 py-4">{asset.price}</td>
-                                                <td className="px-6 py-4">{asset.balance}</td>
-                                                <td className="px-6 py-4 font-medium">{asset.value}</td>
-                                                <td className={`px-6 py-4 ${asset.change.startsWith('+') ? 'text-green-400' : 'text-gray-400'}`}>
-                                                    {asset.change}
+                                        {wallets.length === 0 ? (
+                                            <tr>
+                                                <td colSpan={5} className="px-6 py-8 text-center text-gray-500">
+                                                    No assets found. Add a wallet to track your portfolio.
                                                 </td>
                                             </tr>
-                                        ))}
+                                        ) : (
+                                            wallets.map((wallet, i) => (
+                                                <tr key={i} className="hover:bg-white/5 transition-colors">
+                                                    <td className="px-6 py-4">
+                                                        <div className="flex items-center gap-3">
+                                                            <div className="w-8 h-8 rounded-full bg-gray-700 flex items-center justify-center text-xs font-bold">
+                                                                {wallet.chain || 'ETH'}
+                                                            </div>
+                                                            <div>
+                                                                <div className="font-medium">{wallet.label}</div>
+                                                                <div className="text-xs text-gray-500">{wallet.chain || 'ETH'}</div>
+                                                            </div>
+                                                        </div>
+                                                    </td>
+                                                    <td className="px-6 py-4">-</td>
+                                                    <td className="px-6 py-4">{wallet.balance || '0.00'}</td>
+                                                    <td className="px-6 py-4 font-medium">-</td>
+                                                    <td className="px-6 py-4 text-gray-400">-</td>
+                                                </tr>
+                                            ))
+                                        )}
                                     </tbody>
                                 </table>
                             </div>
@@ -265,12 +386,25 @@ export default function DashboardContent() {
                                                 <div className="text-sm text-gray-500 font-mono">{wallet.address}</div>
                                             </div>
                                         </div>
-                                        <button
-                                            onClick={() => setWallets(wallets.filter(w => w.id !== wallet.id))}
-                                            className="text-gray-400 hover:text-red-400"
-                                        >
-                                            ✕
-                                        </button>
+                                        <div className="text-right">
+                                            <div className="font-bold text-lg">{wallet.balance ? `${wallet.balance} ETH` : 'Loading...'}</div>
+                                            <button
+                                                onClick={async () => {
+                                                    // Optimistic update
+                                                    setWallets(wallets.filter(w => w.id !== wallet.id));
+                                                    const token = localStorage.getItem("auth_token");
+                                                    if (token) {
+                                                        await fetch(`${API_URL}/wallets/${wallet.id}`, {
+                                                            method: 'DELETE',
+                                                            headers: { 'Authorization': `Bearer ${token}` }
+                                                        });
+                                                    }
+                                                }}
+                                                className="text-xs text-red-400 hover:text-red-300 mt-1"
+                                            >
+                                                Remove
+                                            </button>
+                                        </div>
                                     </div>
                                 ))}
                             </div>
@@ -282,33 +416,24 @@ export default function DashboardContent() {
                     <div className="space-y-6">
                         <div className="flex items-center justify-between">
                             <h2 className="text-2xl font-bold">Whale Watch</h2>
-                            <button
-                                onClick={() => setShowModal("wallet")}
-                                className="px-4 py-2 bg-purple-600 rounded-lg text-sm font-bold hover:bg-purple-500"
-                            >
-                                + Track New Wallet
-                            </button>
+                            <div className="text-sm text-gray-400">Live Large Transactions</div>
                         </div>
                         <div className="grid gap-4">
-                            {[
-                                { label: "Vitalik.eth", address: "0xd8dA...6031", balance: "$452.1M", change: "+1.2%" },
-                                { label: "Binance Cold Wallet", address: "0x47ac...3d8e", balance: "$2.1B", change: "-0.5%" },
-                                { label: "Justin Sun", address: "0x3Ddc...921f", balance: "$125.4M", change: "+3.4%" },
-                            ].map((whale, i) => (
+                            {whaleTransactions.map((tx, i) => (
                                 <div key={i} className="p-4 rounded-xl bg-white/5 border border-white/10 flex items-center justify-between hover:bg-white/10 transition-all">
                                     <div className="flex items-center gap-4">
                                         <div className="w-10 h-10 rounded-full bg-blue-500/20 text-blue-400 flex items-center justify-center text-xl">
                                             🐋
                                         </div>
                                         <div>
-                                            <div className="font-bold">{whale.label}</div>
-                                            <div className="text-sm text-gray-500 font-mono">{whale.address}</div>
+                                            <div className="font-bold">{tx.from} ➔ {tx.to.substring(0, 10)}...</div>
+                                            <div className="text-sm text-gray-500 font-mono">{tx.chain} • {new Date(tx.timestamp).toLocaleTimeString()}</div>
                                         </div>
                                     </div>
                                     <div className="text-right">
-                                        <div className="font-bold text-lg">{whale.balance}</div>
-                                        <div className={whale.change.startsWith('+') ? 'text-green-400 text-sm' : 'text-red-400 text-sm'}>
-                                            {whale.change} (24h)
+                                        <div className="font-bold text-lg">{tx.value} {tx.token}</div>
+                                        <div className="text-xs text-gray-500">
+                                            Hash: {tx.hash.substring(0, 8)}...
                                         </div>
                                     </div>
                                 </div>
@@ -374,6 +499,30 @@ export default function DashboardContent() {
                                         Don't know your Chat ID? Message <a href="https://t.me/userinfobot" target="_blank" className="text-purple-400 hover:underline">@userinfobot</a> on Telegram to get it.
                                     </p>
                                 </div>
+                            </div>
+
+                            <div className="p-6 rounded-2xl bg-gradient-to-r from-purple-900/50 to-pink-900/50 border border-purple-500/30 space-y-4">
+                                <div className="flex items-center justify-between">
+                                    <h3 className="font-bold text-lg text-white">Premium Membership</h3>
+                                    {isPremium ? (
+                                        <span className="px-3 py-1 bg-green-500 text-black font-bold rounded-full text-xs">ACTIVE</span>
+                                    ) : (
+                                        <span className="px-3 py-1 bg-gray-700 text-gray-300 font-bold rounded-full text-xs">FREE</span>
+                                    )}
+                                </div>
+                                <p className="text-sm text-gray-300">
+                                    {isPremium
+                                        ? "You have access to all premium features including unlimited alerts and whale tracking."
+                                        : "Upgrade to Premium to unlock unlimited alerts, real-time whale tracking, and priority support."}
+                                </p>
+                                {!isPremium && (
+                                    <button
+                                        onClick={() => setShowModal("payment")}
+                                        className="w-full py-2 bg-white text-black font-bold rounded-lg hover:bg-gray-200 transition-all"
+                                    >
+                                        Upgrade Now
+                                    </button>
+                                )}
                             </div>
 
                             <button onClick={() => window.location.href = '/login'} className="w-full py-3 rounded-xl bg-red-500/10 text-red-500 hover:bg-red-500/20 font-bold transition-all">
@@ -457,7 +606,7 @@ export default function DashboardContent() {
                             </button>
 
                             <h2 className="text-xl font-bold mb-4">
-                                {showModal === "alert" ? "Create New Alert" : "Add Wallet"}
+                                {showModal === "alert" ? "Create New Alert" : showModal === "wallet" ? "Add Wallet" : "Upgrade to Premium"}
                             </h2>
 
                             <div className="space-y-4">
@@ -467,14 +616,25 @@ export default function DashboardContent() {
                                             <label className="block text-sm text-gray-400 mb-1">Token</label>
                                             <input
                                                 type="text"
-                                                placeholder="e.g. ETH"
+                                                placeholder="e.g. ETH, BTC, SOL"
                                                 value={newAlert.token}
                                                 onChange={(e) => setNewAlert({ ...newAlert, token: e.target.value })}
                                                 className="w-full px-4 py-2 rounded-lg bg-white/5 border border-white/10 outline-none focus:border-purple-500"
                                             />
                                         </div>
                                         <div>
-                                            <label className="block text-sm text-gray-400 mb-1">Target Price</label>
+                                            <label className="block text-sm text-gray-400 mb-1">Condition</label>
+                                            <select
+                                                value={newAlert.type}
+                                                onChange={(e) => setNewAlert({ ...newAlert, type: e.target.value as 'above' | 'below' })}
+                                                className="w-full px-4 py-2 rounded-lg bg-white/5 border border-white/10 outline-none focus:border-purple-500 text-white"
+                                            >
+                                                <option value="above">Price goes ABOVE</option>
+                                                <option value="below">Price goes BELOW</option>
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm text-gray-400 mb-1">Target Price ($)</label>
                                             <input
                                                 type="number"
                                                 placeholder="e.g. 3000"
@@ -484,8 +644,21 @@ export default function DashboardContent() {
                                             />
                                         </div>
                                     </>
-                                ) : (
+                                ) : showModal === "wallet" ? (
                                     <>
+                                        <div>
+                                            <label className="block text-sm text-gray-400 mb-1">Token to Track</label>
+                                            <select
+                                                value={newWallet.chain}
+                                                onChange={(e) => setNewWallet({ ...newWallet, chain: e.target.value })}
+                                                className="w-full px-4 py-2 rounded-lg bg-white/5 border border-white/10 outline-none focus:border-purple-500 text-white"
+                                            >
+                                                <option value="ETH">Ethereum (ETH)</option>
+                                                <option value="BTC">Bitcoin (BTC)</option>
+                                                <option value="USDT">Tether (USDT)</option>
+                                                <option value="SOL">Solana (SOL)</option>
+                                            </select>
+                                        </div>
                                         <div>
                                             <label className="block text-sm text-gray-400 mb-1">Wallet Address</label>
                                             <input
@@ -507,13 +680,32 @@ export default function DashboardContent() {
                                             />
                                         </div>
                                     </>
+                                ) : (
+                                    <>
+                                        <div className="p-4 bg-purple-900/20 border border-purple-500/30 rounded-xl mb-4">
+                                            <p className="text-sm text-gray-300 mb-2">Send 10 USDT (ERC20) to verify your account:</p>
+                                            <div className="font-mono bg-black/50 p-2 rounded text-xs break-all">
+                                                0x1234567890123456789012345678901234567890
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm text-gray-400 mb-1">Transaction Hash</label>
+                                            <input
+                                                type="text"
+                                                placeholder="0x..."
+                                                value={paymentTxHash}
+                                                onChange={(e) => setPaymentTxHash(e.target.value)}
+                                                className="w-full px-4 py-2 rounded-lg bg-white/5 border border-white/10 outline-none focus:border-purple-500"
+                                            />
+                                        </div>
+                                    </>
                                 )}
 
                                 <button
-                                    onClick={showModal === "alert" ? handleCreateAlert : handleAddWallet}
+                                    onClick={showModal === "alert" ? handleCreateAlert : showModal === "wallet" ? handleAddWallet : handleVerifyPayment}
                                     className="w-full py-3 rounded-xl bg-purple-600 hover:bg-purple-500 font-bold transition-all"
                                 >
-                                    {showModal === "alert" ? "Set Alert" : "Connect Wallet"}
+                                    {showModal === "alert" ? "Set Alert" : showModal === "wallet" ? "Connect Wallet" : "Verify Payment"}
                                 </button>
                             </div>
                         </div>

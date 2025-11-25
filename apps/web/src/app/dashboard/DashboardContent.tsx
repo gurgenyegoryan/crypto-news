@@ -350,11 +350,16 @@ export default function DashboardContent() {
                         {/* Stats Grid */}
                         <div className="grid md:grid-cols-3 gap-6">
                             <div className="p-6 rounded-2xl bg-white/5 border border-white/10">
-                                <div className="text-gray-400 mb-2">Net Worth</div>
-                                <div className="text-3xl font-bold">$12,450.32</div>
-                                <div className="text-green-400 text-sm mt-2 flex items-center gap-1">
-                                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path></svg>
-                                    +2.4% (24h)
+                                <div className="text-gray-400 mb-2">Portfolio Value</div>
+                                <div className="text-3xl font-bold">
+                                    {wallets.length === 0 ? (
+                                        <span className="text-gray-600">$0.00</span>
+                                    ) : (
+                                        <span className="text-gray-400">-</span>
+                                    )}
+                                </div>
+                                <div className="text-gray-500 text-sm mt-2">
+                                    {wallets.length === 0 ? 'Add wallets to start tracking' : 'Real-time pricing coming soon'}
                                 </div>
                             </div>
                             <div className="p-6 rounded-2xl bg-white/5 border border-white/10">

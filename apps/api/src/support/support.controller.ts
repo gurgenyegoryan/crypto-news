@@ -1,6 +1,6 @@
 import { Controller, Get, Post, Body, Patch, Param, UseGuards, Request } from '@nestjs/common';
+import { AuthGuard } from '@nestjs/passport';
 import { SupportService } from './support.service';
-import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
 class CreateTicketDto {
     name: string;
@@ -13,13 +13,13 @@ class ResolveTicketDto {
     status: string; // expecting 'RESOLVED'
 }
 
-@UseGuards(JwtAuthGuard)
+@UseGuards(AuthGuard('jwt'))
 @Controller('support')
 export class SupportController {
     constructor(private readonly supportService: SupportService) { }
 
     @Post('tickets')
-    async createTicket(@Request() req, @Body() dto: CreateTicketDto) {
+    async createTicket(@Request() req: any, @Body() dto: CreateTicketDto) {
         const userId = req.user.sub; // assuming JWT payload has sub
         return this.supportService.createTicket({
             userId,
@@ -31,7 +31,7 @@ export class SupportController {
     }
 
     @Get('tickets')
-    async getUserTickets(@Request() req) {
+    async getUserTickets(@Request() req: any) {
         const userId = req.user.sub;
         return this.supportService.getUserTickets(userId);
     }

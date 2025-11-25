@@ -49,6 +49,7 @@ export default function DashboardContent() {
     const [supportTickets, setSupportTickets] = useState<{ id: string; name: string; surname: string; email: string; message: string; status: string; createdAt: string }[]>([]);
     const [newTicket, setNewTicket] = useState({ name: "", surname: "", email: "", message: "" });
     const [showTicketModal, setShowTicketModal] = useState(false);
+    const [showUserMenu, setShowUserMenu] = useState(false);
 
     const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
 
@@ -628,32 +629,68 @@ export default function DashboardContent() {
 
                             {/* ... (keep Preferences) ... */}
 
+                            {/* Telegram Integration */}
                             <div className="p-6 rounded-2xl bg-white/5 border border-white/10 space-y-4">
-                                <h3 className="font-bold text-lg">Telegram Integration</h3>
-                                <p className="text-sm text-gray-400">
-                                    To receive alerts, start a chat with <a href="https://t.me/cryptomonitorappbot" target="_blank" className="text-purple-400 hover:underline">@cryptomonitorappbot</a> and enter your Chat ID below.
-                                </p>
-                                <div>
-                                    <label className="block text-sm text-gray-400 mb-1">Telegram Chat ID</label>
-                                    <div className="flex gap-2">
-                                        <input
-                                            type="text"
-                                            placeholder="e.g. 123456789"
-                                            value={settings.telegramChatId}
-                                            onChange={(e) => setSettings({ ...settings, telegramChatId: e.target.value })}
-                                            className="flex-1 px-4 py-2 rounded-lg bg-black/50 border border-white/10 focus:border-purple-500 outline-none"
-                                        />
+                                <div className="flex items-center justify-between">
+                                    <div>
+                                        <h3 className="font-bold text-lg">Telegram Notifications</h3>
+                                        <p className="text-sm text-gray-400 mt-1">
+                                            {isPremium ? 'Receive real-time alerts on Telegram' : 'Available for Premium members only'}
+                                        </p>
+                                    </div>
+                                    {isPremium ? (
                                         <button
-                                            onClick={handleSaveSettings}
-                                            className="px-4 py-2 bg-purple-600 hover:bg-purple-500 rounded-lg font-bold transition-all"
+                                            onClick={() => setSettings({ ...settings, telegramAlerts: !settings.telegramAlerts })}
+                                            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${settings.telegramAlerts ? 'bg-purple-600' : 'bg-gray-600'}`}
                                         >
-                                            {saveSuccess ? "Saved!" : "Save"}
+                                            <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${settings.telegramAlerts ? 'translate-x-6' : 'translate-x-1'}`} />
+                                        </button>
+                                    ) : (
+                                        <span className="px-3 py-1 bg-gray-700/50 text-gray-400 rounded-full text-xs font-medium">
+                                            Premium Only
+                                        </span>
+                                    )}
+                                </div>
+
+                                {isPremium && settings.telegramAlerts && (
+                                    <div className="pt-4 border-t border-white/10 space-y-3">
+                                        <p className="text-sm text-gray-400">
+                                            Start a chat with <a href="https://t.me/cryptomonitorappbot" target="_blank" className="text-purple-400 hover:underline">@cryptomonitorappbot</a> and enter your Chat ID below.
+                                        </p>
+                                        <div>
+                                            <label className="block text-sm text-gray-400 mb-1">Telegram Chat ID</label>
+                                            <div className="flex gap-2">
+                                                <input
+                                                    type="text"
+                                                    placeholder="e.g. 123456789"
+                                                    value={settings.telegramChatId}
+                                                    onChange={(e) => setSettings({ ...settings, telegramChatId: e.target.value })}
+                                                    className="flex-1 px-4 py-2 rounded-lg bg-black/50 border border-white/10 focus:border-purple-500 outline-none"
+                                                />
+                                                <button
+                                                    onClick={handleSaveSettings}
+                                                    className="px-4 py-2 bg-purple-600 hover:bg-purple-500 rounded-lg font-bold transition-all"
+                                                >
+                                                    {saveSuccess ? "Saved!" : "Save"}
+                                                </button>
+                                            </div>
+                                            <p className="text-xs text-gray-500 mt-2">
+                                                Don't know your Chat ID? Message <a href="https://t.me/userinfobot" target="_blank" className="text-purple-400 hover:underline">@userinfobot</a> on Telegram to get it.
+                                            </p>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {!isPremium && (
+                                    <div className="pt-4 border-t border-white/10">
+                                        <button
+                                            onClick={() => setShowModal("payment")}
+                                            className="w-full py-3 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 font-bold transition-all"
+                                        >
+                                            Upgrade to Premium
                                         </button>
                                     </div>
-                                    <p className="text-xs text-gray-500 mt-2">
-                                        Don't know your Chat ID? Message <a href="https://t.me/userinfobot" target="_blank" className="text-purple-400 hover:underline">@userinfobot</a> on Telegram to get it.
-                                    </p>
-                                </div>
+                                )}
                             </div>
 
                             {/* Premium Membership Section */}
@@ -774,10 +811,6 @@ export default function DashboardContent() {
                                     )}
                                 </div>
                             </div>
-
-                            <button onClick={() => window.location.href = '/login'} className="w-full py-3 rounded-xl bg-red-500/10 text-red-500 hover:bg-red-500/20 font-bold transition-all">
-                                Sign Out
-                            </button>
                         </div>
                     </div>
                 );
@@ -869,14 +902,37 @@ export default function DashboardContent() {
                     ))}
                 </nav>
 
-                <div className="p-4 border-t border-white/10">
-                    <div className="flex items-center gap-3 px-4 py-3 rounded-xl bg-white/5">
+                <div className="p-4 border-t border-white/10 relative">
+                    <button
+                        onClick={() => setShowUserMenu(!showUserMenu)}
+                        className="w-full flex items-center gap-3 px-4 py-3 rounded-xl bg-white/5 hover:bg-white/10 transition-all text-left"
+                    >
                         <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-purple-500 to-pink-500" />
                         <div className="flex-1 min-w-0">
                             <div className="text-sm font-medium truncate">{user?.name || "User"}</div>
                             <div className="text-xs text-gray-500">{user?.email || "Free Plan"}</div>
                         </div>
-                    </div>
+                        <svg className={`w-4 h-4 text-gray-400 transition-transform ${showUserMenu ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path>
+                        </svg>
+                    </button>
+
+                    {showUserMenu && (
+                        <div className="absolute bottom-full left-4 right-4 mb-2 bg-gray-900 border border-white/10 rounded-xl shadow-xl overflow-hidden animate-fade-in">
+                            <button
+                                onClick={() => {
+                                    localStorage.removeItem("auth_token");
+                                    window.location.href = '/login';
+                                }}
+                                className="w-full flex items-center gap-3 px-4 py-3 text-red-400 hover:bg-white/5 transition-all text-sm font-medium"
+                            >
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
+                                </svg>
+                                Sign Out
+                            </button>
+                        </div>
+                    )}
                 </div>
             </aside>
 

@@ -144,10 +144,115 @@ export default function Home() {
         </div>
       </section>
 
+      {/* FAQ Section */}
+      <section className="py-24 bg-black/30">
+        <div className="container mx-auto px-6">
+          <div className="max-w-3xl mx-auto">
+            <h2 className="text-3xl md:text-4xl font-bold text-center mb-16">
+              Frequently Asked Questions
+            </h2>
+            <div className="space-y-6">
+              <details className="group p-6 rounded-2xl bg-white/5 border border-white/10 hover:border-purple-500/30 transition-all">
+                <summary className="flex items-center justify-between cursor-pointer text-lg font-bold">
+                  How do I get started?
+                  <span className="text-purple-400 group-open:rotate-180 transition-transform">▼</span>
+                </summary>
+                <p className="mt-4 text-gray-400 leading-relaxed">
+                  Simply sign up for a free account, connect your wallet addresses, and set up your first price alert. You'll receive notifications via email. Upgrade to Premium to unlock Telegram notifications and unlimited tracking.
+                </p>
+              </details>
+
+              <details className="group p-6 rounded-2xl bg-white/5 border border-white/10 hover:border-purple-500/30 transition-all">
+                <summary className="flex items-center justify-between cursor-pointer text-lg font-bold">
+                  What payment methods do you accept?
+                  <span className="text-purple-400 group-open:rotate-180 transition-transform">▼</span>
+                </summary>
+                <p className="mt-4 text-gray-400 leading-relaxed">
+                  We accept USDT (TRC20) for Premium subscriptions. Simply send $29 USDT to our wallet address and submit your transaction hash for instant activation.
+                </p>
+              </details>
+
+              <details className="group p-6 rounded-2xl bg-white/5 border border-white/10 hover:border-purple-500/30 transition-all">
+                <summary className="flex items-center justify-between cursor-pointer text-lg font-bold">
+                  Can I cancel my subscription anytime?
+                  <span className="text-purple-400 group-open:rotate-180 transition-transform">▼</span>
+                </summary>
+                <p className="mt-4 text-gray-400 leading-relaxed">
+                  Yes! There are no long-term commitments. Your Premium access remains active until the end of your billing period, and you can choose not to renew.
+                </p>
+              </details>
+
+              <details className="group p-6 rounded-2xl bg-white/5 border border-white/10 hover:border-purple-500/30 transition-all">
+                <summary className="flex items-center justify-between cursor-pointer text-lg font-bold">
+                  Which blockchains do you support?
+                  <span className="text-purple-400 group-open:rotate-180 transition-transform">▼</span>
+                </summary>
+                <p className="mt-4 text-gray-400 leading-relaxed">
+                  Premium members get access to Ethereum (ETH), Bitcoin (BTC), Solana (SOL), and Binance Smart Chain (BSC). We're constantly adding support for more chains.
+                </p>
+              </details>
+
+              <details className="group p-6 rounded-2xl bg-white/5 border border-white/10 hover:border-purple-500/30 transition-all">
+                <summary className="flex items-center justify-between cursor-pointer text-lg font-bold">
+                  Is my data secure?
+                  <span className="text-purple-400 group-open:rotate-180 transition-transform">▼</span>
+                </summary>
+                <p className="mt-4 text-gray-400 leading-relaxed">
+                  Absolutely. We only track public wallet addresses - we never ask for private keys or seed phrases. All data is encrypted and stored securely.
+                </p>
+              </details>
+
+              <details className="group p-6 rounded-2xl bg-white/5 border border-white/10 hover:border-purple-500/30 transition-all">
+                <summary className="flex items-center justify-between cursor-pointer text-lg font-bold">
+                  What makes CryptoMonitor different?
+                  <span className="text-purple-400 group-open:rotate-180 transition-transform">▼</span>
+                </summary>
+                <p className="mt-4 text-gray-400 leading-relaxed">
+                  We focus on Telegram integration, making it incredibly convenient to stay updated. No need to open multiple apps - get all your crypto alerts where you already chat with friends and communities.
+                </p>
+              </details>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Final CTA */}
+      <section className="py-24 relative overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-r from-purple-900/20 via-pink-900/20 to-purple-900/20" />
+        <div className="container mx-auto px-6 relative z-10">
+          <div className="max-w-3xl mx-auto text-center">
+            <h2 className="text-4xl md:text-5xl font-bold mb-6">
+              Ready to take control of your crypto?
+            </h2>
+            <p className="text-xl text-gray-400 mb-8">
+              Join thousands of traders who never miss a market move.
+            </p>
+            <Link href="/signup" className="inline-block px-10 py-5 rounded-full bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white font-bold text-lg transition-all transform hover:scale-105 shadow-2xl shadow-purple-500/30">
+              Start Free Today →
+            </Link>
+            <p className="text-sm text-gray-500 mt-6">
+              No credit card required • Upgrade anytime
+            </p>
+          </div>
+        </div>
+      </section>
+
       {/* Footer */}
-      <footer className="py-12 border-t border-white/10 bg-black">
-        <div className="container mx-auto px-6 text-center text-gray-500">
-          <p>&copy; 2025 CryptoMonitor.app. All rights reserved.</p>
+      <footer className="border-t border-white/10 py-12 bg-black/50">
+        <div className="container mx-auto px-6">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+            <div className="text-xl font-bold bg-gradient-to-r from-purple-400 to-pink-600 bg-clip-text text-transparent">
+              CryptoMonitor.app
+            </div>
+            <div className="flex items-center gap-8 text-sm text-gray-400">
+              <Link href="/terms" className="hover:text-white transition-colors">Terms</Link>
+              <Link href="/privacy" className="hover:text-white transition-colors">Privacy</Link>
+              <Link href="/dashboard" className="hover:text-white transition-colors">Dashboard</Link>
+            </div>
+            <div className="text-sm text-gray-500">
+              © 2025 CryptoMonitor. All rights reserved.
+            </div>
+          </div>
         </div>
       </footer>
     </div>

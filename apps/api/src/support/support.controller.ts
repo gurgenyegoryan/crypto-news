@@ -32,7 +32,7 @@ export class SupportController {
 
     @Get('tickets')
     async getUserTickets(@Request() req: any) {
-        const userId = req.user.sub;
+        const userId = req.user.id; // JwtStrategy returns { id: payload.sub, ... }
         return this.supportService.getUserTickets(userId);
     }
 

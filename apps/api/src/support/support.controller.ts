@@ -20,7 +20,7 @@ export class SupportController {
 
     @Post('tickets')
     async createTicket(@Request() req: any, @Body() dto: CreateTicketDto) {
-        const userId = req.user.sub; // assuming JWT payload has sub
+        const userId = req.user.id; // JwtStrategy returns { id: payload.sub, ... }
         return this.supportService.createTicket({
             userId,
             name: dto.name,
@@ -37,10 +37,11 @@ export class SupportController {
     }
 
     @Patch('tickets/:id')
-    async resolveTicket(@Param('id') id: string, @Body() dto: ResolveTicketDto) {
+    async resolveTicket(@Request() req: any, @Param('id') id: string, @Body() dto: ResolveTicketDto) {
         if (dto.status !== 'RESOLVED') {
             return { error: 'Invalid status' };
         }
-        return this.supportService.resolveTicket(id);
+        const userId = req.user.id;
+        return this.supportService.resolveTicket(userId, id);
     }
 }

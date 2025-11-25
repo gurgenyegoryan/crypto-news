@@ -13,6 +13,7 @@ export default function DashboardContent() {
     const [showModal, setShowModal] = useState<"alert" | "wallet" | "payment" | null>(null);
     const [saveSuccess, setSaveSuccess] = useState(false);
     const [showUpgradePrompt, setShowUpgradePrompt] = useState(false);
+    const [notification, setNotification] = useState<{ type: 'success' | 'error', message: string } | null>(null);
 
     useEffect(() => {
         if (!isAuthenticated) {
@@ -43,6 +44,11 @@ export default function DashboardContent() {
     // Local state for profile editing
     const [profileName, setProfileName] = useState("");
     const [profileEmail, setProfileEmail] = useState("");
+
+    // Support state
+    const [supportTickets, setSupportTickets] = useState<{ id: string; name: string; surname: string; email: string; message: string; status: string; createdAt: string }[]>([]);
+    const [newTicket, setNewTicket] = useState({ name: "", surname: "", email: "", message: "" });
+    const [showTicketModal, setShowTicketModal] = useState(false);
 
     const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
 
@@ -101,6 +107,86 @@ export default function DashboardContent() {
         }
     };
 
+    const fetchSupportTickets = async () => {
+        const token = localStorage.getItem("auth_token");
+        if (!token) return;
+        try {
+            const res = await fetch(`${API_URL}/support/tickets`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (res.ok) {
+                const data = await res.json();
+                setSupportTickets(data);
+            }
+        } catch (e) {
+            console.error("Failed to fetch tickets", e);
+        }
+    };
+
+    const handleCreateTicket = async () => {
+        if (!newTicket.message) {
+            setNotification({ type: 'error', message: "Message is required" });
+            return;
+        }
+        const token = localStorage.getItem("auth_token");
+        if (!token) return;
+
+        const ticketData = {
+            ...newTicket,
+            name: user?.name || "User",
+            surname: "",
+            email: user?.email || "",
+        };
+
+        try {
+            const res = await fetch(`${API_URL}/support/tickets`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(ticketData)
+            });
+
+            if (res.ok) {
+                setNotification({ type: 'success', message: "Ticket created successfully" });
+                setNewTicket({ name: "", surname: "", email: "", message: "" });
+                setShowTicketModal(false);
+                fetchSupportTickets();
+            } else {
+                setNotification({ type: 'error', message: "Failed to create ticket" });
+            }
+        } catch (e) {
+            console.error("Error creating ticket", e);
+            setNotification({ type: 'error', message: "Error creating ticket" });
+        }
+    };
+    const handleResolveTicket = async (id: string) => {
+        const token = localStorage.getItem("auth_token");
+        if (!token) return;
+
+        try {
+            const res = await fetch(`${API_URL}/support/tickets/${id}`, {
+                method: 'PATCH',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ status: 'RESOLVED' })
+            });
+
+            if (res.ok) {
+                fetchSupportTickets();
+                setNotification({ type: 'success', message: "Ticket resolved" });
+            } else {
+                setNotification({ type: 'error', message: "Failed to resolve ticket" });
+            }
+        } catch (e) {
+            console.error("Error resolving ticket", e);
+            setNotification({ type: 'error', message: "Error resolving ticket" });
+        }
+    };
+
     // Load data on mount
     useEffect(() => {
         const storedAlerts = localStorage.getItem("user_alerts");
@@ -109,6 +195,7 @@ export default function DashboardContent() {
         if (isAuthenticated) {
             fetchWallets();
             fetchWhaleTransactions();
+            fetchSupportTickets();
         }
     }, [isAuthenticated]);
 
@@ -116,6 +203,16 @@ export default function DashboardContent() {
     useEffect(() => {
         localStorage.setItem("user_alerts", JSON.stringify(alerts));
     }, [alerts]);
+
+    // Clear notification after 3 seconds
+    useEffect(() => {
+        if (notification) {
+            const timer = setTimeout(() => {
+                setNotification(null);
+            }, 3000);
+            return () => clearTimeout(timer);
+        }
+    }, [notification]);
 
     const handleCreateAlert = async () => {
         if (!newAlert.token || !newAlert.price) return;
@@ -142,23 +239,24 @@ export default function DashboardContent() {
                 setAlerts([...alerts, { ...alertData, active: true }]);
                 setNewAlert({ token: "", price: "", type: "above" });
                 setShowModal(null);
+                setNotification({ type: 'success', message: "Alert created successfully!" });
             } else {
                 const errorData = await res.json();
                 const errorMessage = errorData.message || "Failed to create alert";
 
-                // Check if it's a tier limit error
+                // Check if it's a tier limit
                 if (errorMessage.includes('Free tier limit') || errorMessage.includes('upgrade to Premium')) {
                     setShowUpgradePrompt(true);
                     setShowModal(null);
                 } else {
-                    alert(errorMessage);
+                    setNotification({ type: 'error', message: errorMessage });
                 }
             }
         } catch (e) {
             console.error("Error creating alert", e);
+            setNotification({ type: 'error', message: "Error creating alert" });
         }
     };
-
     const handleAddWallet = async () => {
         if (!newWallet.address) return;
 
@@ -183,24 +281,24 @@ export default function DashboardContent() {
                 await fetchWallets(); // Refresh list
                 setNewWallet({ address: "", label: "", chain: "ETH" });
                 setShowModal(null);
+                setNotification({ type: 'success', message: "Wallet added successfully!" });
             } else {
                 const errorData = await res.json();
                 const errorMessage = errorData.message || "Failed to add wallet";
 
-                // Check if it's a tier limit error
+                // Check if it's a tier limit
                 if (errorMessage.includes('Free tier limit') || errorMessage.includes('upgrade to Premium')) {
                     setShowUpgradePrompt(true);
                     setShowModal(null);
                 } else {
-                    alert(errorMessage);
+                    setNotification({ type: 'error', message: errorMessage });
                 }
             }
         } catch (e) {
             console.error("Error adding wallet", e);
-            alert("Error adding wallet");
+            setNotification({ type: 'error', message: "Error adding wallet" });
         }
     };
-
     const handleVerifyPayment = async () => {
         if (!paymentTxHash) return;
         const token = localStorage.getItem("auth_token");
@@ -218,19 +316,18 @@ export default function DashboardContent() {
 
             if (res.ok) {
                 const data = await res.json();
-                alert(data.message);
+                setNotification({ type: 'success', message: data.message });
                 setIsPremium(true);
                 setShowModal(null);
                 setPaymentTxHash("");
             } else {
-                alert("Payment verification failed. Please check the hash.");
+                setNotification({ type: 'error', message: "Payment verification failed. Please check the hash." });
             }
         } catch (e) {
             console.error("Payment verification error", e);
-            alert("Error verifying payment");
+            setNotification({ type: 'error', message: "Error verifying payment" });
         }
     };
-
     const handleSaveSettings = () => {
         // Save settings to localStorage
         localStorage.setItem("user_settings", JSON.stringify(settings));
@@ -241,6 +338,7 @@ export default function DashboardContent() {
         // Show success message
         setSaveSuccess(true);
         setTimeout(() => setSaveSuccess(false), 3000);
+        setNotification({ type: 'success', message: "Settings saved successfully!" });
     };
 
     const renderContent = () => {
@@ -363,7 +461,30 @@ export default function DashboardContent() {
                                                 {alert.active ? 'Active' : 'Inactive'}
                                             </span>
                                             <button
-                                                onClick={() => setAlerts(alerts.filter(a => a.id !== alert.id))}
+                                                onClick={async () => {
+                                                    // Optimistic update
+                                                    setAlerts(alerts.filter(a => a.id !== alert.id));
+                                                    const token = localStorage.getItem("auth_token");
+                                                    if (token) {
+                                                        try {
+                                                            const res = await fetch(`${API_URL}/alerts/${alert.id}`, {
+                                                                method: 'DELETE',
+                                                                headers: { 'Authorization': `Bearer ${token}` }
+                                                            });
+                                                            if (res.ok) {
+                                                                setNotification({ type: 'success', message: "Alert deleted successfully!" });
+                                                            } else {
+                                                                setNotification({ type: 'error', message: "Failed to delete alert." });
+                                                                // Revert if delete fails
+                                                                fetchSupportTickets(); // Or re-fetch alerts
+                                                            }
+                                                        } catch (e) {
+                                                            console.error("Error deleting alert", e);
+                                                            setNotification({ type: 'error', message: "Error deleting alert." });
+                                                            fetchSupportTickets(); // Or re-fetch alerts
+                                                        }
+                                                    }
+                                                }}
                                                 className="text-gray-400 hover:text-red-400"
                                             >
                                                 ✕
@@ -415,10 +536,23 @@ export default function DashboardContent() {
                                                     setWallets(wallets.filter(w => w.id !== wallet.id));
                                                     const token = localStorage.getItem("auth_token");
                                                     if (token) {
-                                                        await fetch(`${API_URL}/wallets/${wallet.id}`, {
-                                                            method: 'DELETE',
-                                                            headers: { 'Authorization': `Bearer ${token}` }
-                                                        });
+                                                        try {
+                                                            const res = await fetch(`${API_URL}/wallets/${wallet.id}`, {
+                                                                method: 'DELETE',
+                                                                headers: { 'Authorization': `Bearer ${token}` }
+                                                            });
+                                                            if (res.ok) {
+                                                                setNotification({ type: 'success', message: "Wallet removed successfully!" });
+                                                            } else {
+                                                                setNotification({ type: 'error', message: "Failed to remove wallet." });
+                                                                // Revert if delete fails
+                                                                fetchWallets();
+                                                            }
+                                                        } catch (e) {
+                                                            console.error("Error removing wallet", e);
+                                                            setNotification({ type: 'error', message: "Error removing wallet." });
+                                                            fetchWallets();
+                                                        }
                                                     }
                                                 }}
                                                 className="text-xs text-red-400 hover:text-red-300 mt-1"
@@ -647,6 +781,56 @@ export default function DashboardContent() {
                         </div>
                     </div>
                 );
+            case "Support":
+                return (
+                    <div className="space-y-6">
+                        <div className="flex items-center justify-between">
+                            <h2 className="text-2xl font-bold">Support Tickets</h2>
+                            <button
+                                onClick={() => setShowTicketModal(true)}
+                                className="px-4 py-2 bg-purple-600 rounded-lg text-sm font-bold hover:bg-purple-500"
+                            >
+                                + New Ticket
+                            </button>
+                        </div>
+
+                        {supportTickets.length === 0 ? (
+                            <div className="p-8 text-center text-gray-400 bg-white/5 rounded-2xl border border-white/10">
+                                <div className="text-4xl mb-4">🎫</div>
+                                <h2 className="text-xl font-bold text-white mb-2">No Tickets Found</h2>
+                                <p>Need help? Create a support ticket.</p>
+                            </div>
+                        ) : (
+                            <div className="space-y-4">
+                                {supportTickets.map((ticket) => (
+                                    <div key={ticket.id} className="p-6 rounded-xl bg-white/5 border border-white/10 space-y-4">
+                                        <div className="flex items-center justify-between">
+                                            <div className="flex items-center gap-3">
+                                                <span className={`px-3 py-1 rounded-full text-xs font-bold ${ticket.status === 'OPEN' ? 'bg-green-500/20 text-green-400' : 'bg-gray-500/20 text-gray-400'}`}>
+                                                    {ticket.status}
+                                                </span>
+                                                <span className="text-sm text-gray-500">
+                                                    {new Date(ticket.createdAt).toLocaleString()}
+                                                </span>
+                                            </div>
+                                            {ticket.status === 'OPEN' && (
+                                                <button
+                                                    onClick={() => handleResolveTicket(ticket.id)}
+                                                    className="text-sm text-purple-400 hover:text-purple-300"
+                                                >
+                                                    Mark as Resolved
+                                                </button>
+                                            )}
+                                        </div>
+                                        <div>
+                                            <p className="text-gray-300 whitespace-pre-wrap">{ticket.message}</p>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                );
             default:
                 return <div className="p-8">Coming Soon</div>;
         }
@@ -669,6 +853,7 @@ export default function DashboardContent() {
                         { name: "Wallets", icon: "👛" },
                         { name: "Whale Watch", icon: "🐋" },
                         { name: "Settings", icon: "⚙️" },
+                        { name: "Support", icon: "🎫" },
                     ].map((item) => (
                         <button
                             key={item.name}
@@ -828,7 +1013,7 @@ export default function DashboardContent() {
                                                         <button
                                                             onClick={() => {
                                                                 navigator.clipboard.writeText('TSWJ1i1z4aDDsDvC1N6A6UgRteJabtuo29');
-                                                                alert('Address copied!');
+                                                                setNotification({ type: 'success', message: 'Address copied!' });
                                                             }}
                                                             className="px-3 py-2 bg-purple-600 hover:bg-purple-500 rounded-lg text-sm font-medium transition-all"
                                                         >
@@ -880,6 +1065,39 @@ export default function DashboardContent() {
                                     className="w-full py-3 rounded-xl bg-purple-600 hover:bg-purple-500 font-bold transition-all"
                                 >
                                     {showModal === "alert" ? "Set Alert" : showModal === "wallet" ? "Connect Wallet" : "Verify Payment"}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* Support Ticket Modal */}
+                {showTicketModal && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+                        <div className="w-full max-w-md bg-gray-900 border border-white/10 rounded-2xl p-6 relative">
+                            <button
+                                onClick={() => setShowTicketModal(false)}
+                                className="absolute top-4 right-4 text-gray-400 hover:text-white"
+                            >
+                                ✕
+                            </button>
+                            <h2 className="text-xl font-bold mb-4">New Support Ticket</h2>
+                            <div className="space-y-4">
+                                <div>
+                                    <label className="block text-sm text-gray-400 mb-1">Message</label>
+                                    <textarea
+                                        rows={5}
+                                        placeholder="Describe your issue..."
+                                        value={newTicket.message}
+                                        onChange={(e) => setNewTicket({ ...newTicket, message: e.target.value })}
+                                        className="w-full px-4 py-2 rounded-lg bg-white/5 border border-white/10 outline-none focus:border-purple-500 resize-none"
+                                    />
+                                </div>
+                                <button
+                                    onClick={handleCreateTicket}
+                                    className="w-full py-3 rounded-xl bg-purple-600 hover:bg-purple-500 font-bold transition-all"
+                                >
+                                    Submit Ticket
                                 </button>
                             </div>
                         </div>

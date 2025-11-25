@@ -12,6 +12,7 @@ import { PriceModule } from './price/price.module';
 import { TelegramModule } from './telegram/telegram.module';
 import { WhaleWatchModule } from './whale-watch/whale-watch.module';
 import { PaymentsModule } from './payments/payments.module';
+import { SupportModule } from './support/support.module';
 
 @Module({
   imports: [
@@ -26,6 +27,7 @@ import { PaymentsModule } from './payments/payments.module';
     TelegramModule,
     WhaleWatchModule,
     PaymentsModule,
+    SupportModule,
   ],
   controllers: [AppController],
   providers: [AppService],

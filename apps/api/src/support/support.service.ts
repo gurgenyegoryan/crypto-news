@@ -1,21 +1,20 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import * as nodemailer from 'nodemailer';
-import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class SupportService {
     private readonly logger = new Logger(SupportService.name);
     private transporter: nodemailer.Transporter;
 
-    constructor(private prisma: PrismaService, private config: ConfigService) {
+    constructor(private prisma: PrismaService) {
         this.transporter = nodemailer.createTransport({
-            host: this.config.get<string>('SMTP_HOST'),
-            port: this.config.get<number>('SMTP_PORT'),
-            secure: this.config.get<boolean>('SMTP_SECURE'), // true for 465, false for other ports
+            host: process.env.SMTP_HOST,
+            port: Number(process.env.SMTP_PORT),
+            secure: process.env.SMTP_SECURE === 'true', // true for 465, false otherwise
             auth: {
-                user: this.config.get<string>('SMTP_USER'),
-                pass: this.config.get<string>('SMTP_PASS'),
+                user: process.env.SMTP_USER,
+                pass: process.env.SMTP_PASS,
             },
         });
     }
@@ -38,17 +37,27 @@ export class SupportService {
         });
 
         // Send email to support address
-        const supportEmail = this.config.get<string>('SUPPORT_EMAIL');
+        const supportEmail = 'support@cryptomonitor.app';
         try {
             await this.transporter.sendMail({
-                from: data.email,
+                from: `"CryptoMonitor Support" <${process.env.SMTP_USER}>`,
                 to: supportEmail,
-                subject: `Support Ticket from ${data.name} ${data.surname}`,
-                text: data.message,
+                replyTo: data.email, // This ensures replies go to the client
+                subject: `New Support Ticket: ${data.name} ${data.surname}`,
+                html: `
+                    <h3>New Support Ticket</h3>
+                    <p><strong>User:</strong> ${data.name} ${data.surname}</p>
+                    <p><strong>Email:</strong> ${data.email}</p>
+                    <p><strong>User ID:</strong> ${data.userId}</p>
+                    <hr />
+                    <p><strong>Message:</strong></p>
+                    <p>${data.message.replace(/\n/g, '<br>')}</p>
+                `,
             });
             this.logger.log(`Support email sent for ticket ${ticket.id}`);
         } catch (err) {
             this.logger.error('Failed to send support email', err);
+            // We don't throw here to avoid failing the ticket creation if email fails
         }
 
         return ticket;
@@ -61,7 +70,16 @@ export class SupportService {
         });
     }
 
-    async resolveTicket(ticketId: string) {
+    async resolveTicket(userId: string, ticketId: string) {
+        // Verify ownership
+        const ticket = await this.prisma.supportTicket.findUnique({
+            where: { id: ticketId },
+        });
+
+        if (!ticket || ticket.userId !== userId) {
+            throw new Error('Ticket not found or access denied');
+        }
+
         return this.prisma.supportTicket.update({
             where: { id: ticketId },
             data: { status: 'RESOLVED' },

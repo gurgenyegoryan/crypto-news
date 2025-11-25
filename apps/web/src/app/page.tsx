@@ -92,49 +92,52 @@ export default function Home() {
       <section id="pricing" className="py-24">
         <div className="container mx-auto px-6">
           <h2 className="text-3xl md:text-4xl font-bold text-center mb-16">Simple Pricing</h2>
-          <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
+          <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
             {[
               {
                 name: "Free",
                 price: "$0",
                 features: ["1 Wallet", "3 Alerts", "Daily Digest"],
                 cta: "Get Started",
-                highlight: false
+                highlight: false,
+                link: "/signup"
               },
               {
-                name: "Pro",
-                price: "$9",
-                features: ["5 Wallets", "Unlimited Alerts", "Real-time Tx Notifications", "Whale Watching"],
-                cta: "Go Pro",
-                highlight: true
-              },
-              {
-                name: "Advanced",
-                price: "$19",
-                features: ["Unlimited Wallets", "CSV Export", "API Access", "Priority Support"],
-                cta: "Contact Sales",
-                highlight: false
+                name: "Premium",
+                price: "$29",
+                features: [
+                  "Unlimited price alerts",
+                  "Unlimited wallet tracking",
+                  "Real-time whale transaction alerts",
+                  "Multi-chain support",
+                  "Advanced portfolio analytics",
+                  "Priority Telegram notifications",
+                  "24/7 priority support"
+                ],
+                cta: "Upgrade to Premium",
+                highlight: true,
+                link: "/dashboard"
               }
             ].map((plan, i) => (
-              <div key={i} className={`relative p-8 rounded-2xl border ${plan.highlight ? 'border-purple-500 bg-purple-500/5' : 'border-white/10 bg-white/5'} flex flex-col`}>
+              <div key={i} className={`relative p-8 rounded-2xl border ${plan.highlight ? 'bg-gradient-to-br from-purple-900/50 via-pink-900/30 to-purple-900/50 border-purple-500/50' : 'border-white/10 bg-white/5'} flex flex-col`}>
                 {plan.highlight && (
-                  <div className="absolute -top-4 left-1/2 -translate-x-1/2 px-4 py-1 rounded-full bg-purple-500 text-xs font-bold uppercase tracking-wider">
-                    Most Popular
+                  <div className="absolute -top-4 left-1/2 -translate-x-1/2 px-4 py-1 rounded-full bg-gradient-to-r from-green-500 to-emerald-500 text-white text-xs font-bold uppercase tracking-wider shadow-lg">
+                    Recommended
                   </div>
                 )}
-                <h3 className="text-xl font-bold mb-2">{plan.name}</h3>
+                <h3 className="text-2xl font-bold mb-2">{plan.name}</h3>
                 <div className="text-4xl font-bold mb-6">{plan.price}<span className="text-lg text-gray-500 font-normal">/mo</span></div>
                 <ul className="space-y-4 mb-8 flex-1">
                   {plan.features.map((f, j) => (
                     <li key={j} className="flex items-center gap-3 text-gray-300">
-                      <svg className="w-5 h-5 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path></svg>
+                      <svg className={`w-5 h-5 ${plan.highlight ? 'text-green-400' : 'text-purple-500'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path></svg>
                       {f}
                     </li>
                   ))}
                 </ul>
-                <button className={`w-full py-3 rounded-xl font-bold transition-all ${plan.highlight ? 'bg-purple-600 hover:bg-purple-500 text-white' : 'bg-white/10 hover:bg-white/20 text-white'}`}>
+                <Link href={plan.link} className={`w-full py-4 text-center rounded-xl font-bold transition-all ${plan.highlight ? 'bg-gradient-to-r from-purple-600 via-pink-600 to-purple-600 hover:from-purple-500 hover:via-pink-500 hover:to-purple-500 shadow-lg shadow-purple-500/25' : 'bg-white/10 hover:bg-white/20 text-white'}`}>
                   {plan.cta}
-                </button>
+                </Link>
               </div>
             ))}
           </div>

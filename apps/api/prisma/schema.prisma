@@ -27,7 +27,7 @@ model User {
   // Subscription management
   premiumUntil            DateTime? @map("premium_until")
   lastPaymentDate         DateTime? @map("last_payment_date")
-  subscriptionStatus      String    @default("inactive") // active, inactive, expired
+  subscriptionStatus      String    @default("inactive") @map("subscription_status") // active, inactive, expired
 
   wallets     Wallet[]
   alerts      Alert[]

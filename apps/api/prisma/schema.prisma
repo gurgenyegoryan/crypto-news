@@ -32,7 +32,8 @@ model User {
   wallets     Wallet[]
   alerts      Alert[]
   snapshots   PortfolioSnapshot[]
-  payments    Payment[]
+  payments    Payment[] @relation("UserPayments")
+  supportTickets SupportTicket[] @relation("UserSupportTickets")
 
   @@map("users")
 }
@@ -87,7 +88,28 @@ model Payment {
   createdAt       DateTime @default(now()) @map("created_at")
   verifiedAt      DateTime? @map("verified_at")
 
-  user            User     @relation(fields: [userId], references: [id])
+  user            User @relation("UserPayments", fields: [userId], references: [id])
 
   @@map("payments")
+}
+
+enum TicketStatus {
+  OPEN
+  RESOLVED
+}
+
+model SupportTicket {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  name      String
+  surname   String
+  email     String
+  message   String
+  status    TicketStatus @default(OPEN)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  user      User @relation("UserSupportTickets", fields: [userId], references: [id])
+
+  @@map("support_tickets")
 }

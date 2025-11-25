@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Param, Delete, UseGuards, Request } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Delete, UseGuards, Request, BadRequestException } from '@nestjs/common';
 import { WalletsService } from './wallets.service';
 import { AuthGuard } from '@nestjs/passport';
 
@@ -8,8 +8,12 @@ export class WalletsController {
     constructor(private readonly walletsService: WalletsService) { }
 
     @Post()
-    create(@Request() req: any, @Body() createWalletDto: { address: string; chain: string; label?: string }) {
-        return this.walletsService.create(req.user.id, createWalletDto);
+    async create(@Request() req: any, @Body() createWalletDto: { address: string; chain: string; label?: string }) {
+        try {
+            return await this.walletsService.create(req.user.id, createWalletDto);
+        } catch (error) {
+            throw new BadRequestException(error.message);
+        }
     }
 
     @Get()

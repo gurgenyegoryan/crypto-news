@@ -16,7 +16,10 @@ async function main() {
             email: 'demo@cryptomonitor.app',
             password: hashedPassword,
             name: 'Demo User',
-            tier: 'pro',
+            tier: 'premium',
+            isVerified: true,
+            subscriptionStatus: 'active',
+            premiumUntil: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days from now
         },
     });
 
@@ -28,6 +31,8 @@ async function main() {
             password: hashedPassword,
             name: 'Test User',
             tier: 'free',
+            isVerified: true,
+            subscriptionStatus: 'inactive',
         },
     });
 
@@ -37,7 +42,7 @@ async function main() {
     const wallet1 = await prisma.wallet.create({
         data: {
             userId: user1.id,
-            address: '0x742d35Cc6634C0532925a3b844Bc9e7595f0bEb',
+            address: 'TSWJ1i1z4aDDsDvC1N6A6UgRteJabtuo29',
             chain: 'eth',
             label: 'Main Ethereum Wallet',
         },

@@ -12,6 +12,7 @@ export default function DashboardContent() {
     const router = useRouter();
     const [showModal, setShowModal] = useState<"alert" | "wallet" | "payment" | null>(null);
     const [saveSuccess, setSaveSuccess] = useState(false);
+    const [showUpgradePrompt, setShowUpgradePrompt] = useState(false);
 
     useEffect(() => {
         if (!isAuthenticated) {
@@ -137,10 +138,21 @@ export default function DashboardContent() {
             });
 
             if (res.ok) {
-                const alert = await res.json();
-                setAlerts([...alerts, { ...alert, active: true }]);
+                const alertData = await res.json();
+                setAlerts([...alerts, { ...alertData, active: true }]);
                 setNewAlert({ token: "", price: "", type: "above" });
                 setShowModal(null);
+            } else {
+                const errorData = await res.json();
+                const errorMessage = errorData.message || "Failed to create alert";
+
+                // Check if it's a tier limit error
+                if (errorMessage.includes('Free tier limit') || errorMessage.includes('upgrade to Premium')) {
+                    setShowUpgradePrompt(true);
+                    setShowModal(null);
+                } else {
+                    alert(errorMessage);
+                }
             }
         } catch (e) {
             console.error("Error creating alert", e);
@@ -172,7 +184,16 @@ export default function DashboardContent() {
                 setNewWallet({ address: "", label: "", chain: "ETH" });
                 setShowModal(null);
             } else {
-                alert("Failed to add wallet");
+                const errorData = await res.json();
+                const errorMessage = errorData.message || "Failed to add wallet";
+
+                // Check if it's a tier limit error
+                if (errorMessage.includes('Free tier limit') || errorMessage.includes('upgrade to Premium')) {
+                    setShowUpgradePrompt(true);
+                    setShowModal(null);
+                } else {
+                    alert(errorMessage);
+                }
             }
         } catch (e) {
             console.error("Error adding wallet", e);
@@ -501,28 +522,123 @@ export default function DashboardContent() {
                                 </div>
                             </div>
 
-                            <div className="p-6 rounded-2xl bg-gradient-to-r from-purple-900/50 to-pink-900/50 border border-purple-500/30 space-y-4">
-                                <div className="flex items-center justify-between">
-                                    <h3 className="font-bold text-lg text-white">Premium Membership</h3>
-                                    {isPremium ? (
-                                        <span className="px-3 py-1 bg-green-500 text-black font-bold rounded-full text-xs">ACTIVE</span>
-                                    ) : (
-                                        <span className="px-3 py-1 bg-gray-700 text-gray-300 font-bold rounded-full text-xs">FREE</span>
+                            {/* Premium Membership Section */}
+                            <div className="p-8 rounded-2xl bg-gradient-to-br from-purple-900/50 via-pink-900/30 to-purple-900/50 border-2 border-purple-500/30 space-y-6 relative overflow-hidden">
+                                {/* Background decoration */}
+                                <div className="absolute top-0 right-0 w-64 h-64 bg-purple-500/10 rounded-full blur-3xl"></div>
+                                <div className="absolute bottom-0 left-0 w-64 h-64 bg-pink-500/10 rounded-full blur-3xl"></div>
+
+                                <div className="relative z-10">
+                                    <div className="flex items-center justify-between mb-4">
+                                        <div className="flex items-center gap-3">
+                                            <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl flex items-center justify-center">
+                                                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
+                                                </svg>
+                                            </div>
+                                            <div>
+                                                <h3 className="font-bold text-2xl text-white">Premium Membership</h3>
+                                                <p className="text-sm text-purple-300">Unlock the full power of CryptoMonitor</p>
+                                            </div>
+                                        </div>
+                                        {isPremium ? (
+                                            <span className="px-4 py-2 bg-gradient-to-r from-green-500 to-emerald-500 text-white font-bold rounded-full text-sm shadow-lg">
+                                                ✓ ACTIVE
+                                            </span>
+                                        ) : (
+                                            <span className="px-4 py-2 bg-slate-700/50 text-slate-300 font-bold rounded-full text-sm">
+                                                FREE TIER
+                                            </span>
+                                        )}
+                                    </div>
+
+                                    {!isPremium && (
+                                        <>
+                                            {/* Pricing */}
+                                            <div className="bg-black/30 backdrop-blur-sm rounded-xl p-6 mb-6 border border-purple-500/20">
+                                                <div className="text-center mb-4">
+                                                    <div className="text-5xl font-bold text-white mb-2">
+                                                        $29<span className="text-2xl text-gray-400">/month</span>
+                                                    </div>
+                                                    <p className="text-purple-300 text-sm">Pay with USDT (TRC20) • Cancel anytime</p>
+                                                </div>
+                                            </div>
+
+                                            {/* Features Comparison */}
+                                            <div className="grid md:grid-cols-2 gap-4 mb-6">
+                                                <div className="space-y-3">
+                                                    <div className="text-sm font-bold text-purple-300 uppercase tracking-wide mb-3">Free Tier</div>
+                                                    <div className="flex items-start gap-2 text-sm text-gray-400">
+                                                        <span className="text-red-400">✗</span>
+                                                        <span>1 Price Alert only</span>
+                                                    </div>
+                                                    <div className="flex items-start gap-2 text-sm text-gray-400">
+                                                        <span className="text-red-400">✗</span>
+                                                        <span>1 Wallet tracking only</span>
+                                                    </div>
+                                                    <div className="flex items-start gap-2 text-sm text-gray-400">
+                                                        <span className="text-red-400">✗</span>
+                                                        <span>Basic whale alerts</span>
+                                                    </div>
+                                                    <div className="flex items-start gap-2 text-sm text-gray-400">
+                                                        <span className="text-red-400">✗</span>
+                                                        <span>Email support only</span>
+                                                    </div>
+                                                </div>
+                                                <div className="space-y-3 bg-purple-500/10 rounded-lg p-4 border border-purple-500/30">
+                                                    <div className="text-sm font-bold text-purple-300 uppercase tracking-wide mb-3">Premium</div>
+                                                    <div className="flex items-start gap-2 text-sm text-white">
+                                                        <span className="text-green-400">✓</span>
+                                                        <span><strong>Unlimited</strong> price alerts</span>
+                                                    </div>
+                                                    <div className="flex items-start gap-2 text-sm text-white">
+                                                        <span className="text-green-400">✓</span>
+                                                        <span><strong>Unlimited</strong> wallet tracking</span>
+                                                    </div>
+                                                    <div className="flex items-start gap-2 text-sm text-white">
+                                                        <span className="text-green-400">✓</span>
+                                                        <span><strong>Real-time</strong> whale transaction alerts</span>
+                                                    </div>
+                                                    <div className="flex items-start gap-2 text-sm text-white">
+                                                        <span className="text-green-400">✓</span>
+                                                        <span><strong>Multi-chain</strong> support (ETH, BTC, SOL, BSC)</span>
+                                                    </div>
+                                                    <div className="flex items-start gap-2 text-sm text-white">
+                                                        <span className="text-green-400">✓</span>
+                                                        <span><strong>Advanced</strong> portfolio analytics</span>
+                                                    </div>
+                                                    <div className="flex items-start gap-2 text-sm text-white">
+                                                        <span className="text-green-400">✓</span>
+                                                        <span><strong>Priority</strong> Telegram notifications</span>
+                                                    </div>
+                                                    <div className="flex items-start gap-2 text-sm text-white">
+                                                        <span className="text-green-400">✓</span>
+                                                        <span><strong>24/7</strong> priority support</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            {/* CTA Button */}
+                                            <button
+                                                onClick={() => setShowModal("payment")}
+                                                className="w-full py-4 rounded-xl bg-gradient-to-r from-purple-600 via-pink-600 to-purple-600 hover:from-purple-500 hover:via-pink-500 hover:to-purple-500 font-bold text-lg transition-all shadow-2xl shadow-purple-500/50 hover:shadow-purple-500/70 transform hover:scale-[1.02]"
+                                            >
+                                                🚀 Upgrade to Premium Now
+                                            </button>
+                                            <p className="text-center text-xs text-gray-400 mt-3">
+                                                Secure payment via USDT (TRC20) • Instant activation
+                                            </p>
+                                        </>
+                                    )}
+
+                                    {isPremium && (
+                                        <div className="text-center py-8">
+                                            <div className="text-6xl mb-4">🎉</div>
+                                            <p className="text-xl text-white font-bold mb-2">You're a Premium Member!</p>
+                                            <p className="text-gray-300">Enjoy unlimited access to all features</p>
+                                        </div>
                                     )}
                                 </div>
-                                <p className="text-sm text-gray-300">
-                                    {isPremium
-                                        ? "You have access to all premium features including unlimited alerts and whale tracking."
-                                        : "Upgrade to Premium to unlock unlimited alerts, real-time whale tracking, and priority support."}
-                                </p>
-                                {!isPremium && (
-                                    <button
-                                        onClick={() => setShowModal("payment")}
-                                        className="w-full py-2 bg-white text-black font-bold rounded-lg hover:bg-gray-200 transition-all"
-                                    >
-                                        Upgrade Now
-                                    </button>
-                                )}
                             </div>
 
                             <button onClick={() => window.location.href = '/login'} className="w-full py-3 rounded-xl bg-red-500/10 text-red-500 hover:bg-red-500/20 font-bold transition-all">
@@ -627,10 +743,10 @@ export default function DashboardContent() {
                                             <select
                                                 value={newAlert.type}
                                                 onChange={(e) => setNewAlert({ ...newAlert, type: e.target.value as 'above' | 'below' })}
-                                                className="w-full px-4 py-2 rounded-lg bg-white/5 border border-white/10 outline-none focus:border-purple-500 text-white"
+                                                className="w-full px-4 py-2 rounded-lg bg-slate-800 border border-white/10 outline-none focus:border-purple-500 text-white"
                                             >
-                                                <option value="above">Price goes ABOVE</option>
-                                                <option value="below">Price goes BELOW</option>
+                                                <option value="above" className="bg-slate-800 text-white">Price goes ABOVE</option>
+                                                <option value="below" className="bg-slate-800 text-white">Price goes BELOW</option>
                                             </select>
                                         </div>
                                         <div>
@@ -651,12 +767,12 @@ export default function DashboardContent() {
                                             <select
                                                 value={newWallet.chain}
                                                 onChange={(e) => setNewWallet({ ...newWallet, chain: e.target.value })}
-                                                className="w-full px-4 py-2 rounded-lg bg-white/5 border border-white/10 outline-none focus:border-purple-500 text-white"
+                                                className="w-full px-4 py-2 rounded-lg bg-slate-800 border border-white/10 outline-none focus:border-purple-500 text-white"
                                             >
-                                                <option value="ETH">Ethereum (ETH)</option>
-                                                <option value="BTC">Bitcoin (BTC)</option>
-                                                <option value="USDT">Tether (USDT)</option>
-                                                <option value="SOL">Solana (SOL)</option>
+                                                <option value="ETH" className="bg-slate-800 text-white">Ethereum (ETH)</option>
+                                                <option value="BTC" className="bg-slate-800 text-white">Bitcoin (BTC)</option>
+                                                <option value="USDT" className="bg-slate-800 text-white">Tether (USDT)</option>
+                                                <option value="SOL" className="bg-slate-800 text-white">Solana (SOL)</option>
                                             </select>
                                         </div>
                                         <div>
@@ -682,21 +798,79 @@ export default function DashboardContent() {
                                     </>
                                 ) : (
                                     <>
-                                        <div className="p-4 bg-purple-900/20 border border-purple-500/30 rounded-xl mb-4">
-                                            <p className="text-sm text-gray-300 mb-2">Send 10 USDT (ERC20) to verify your account:</p>
-                                            <div className="font-mono bg-black/50 p-2 rounded text-xs break-all">
-                                                0x1234567890123456789012345678901234567890
+                                        {/* Payment Instructions */}
+                                        <div className="bg-gradient-to-br from-purple-900/30 to-pink-900/30 border-2 border-purple-500/30 rounded-xl p-6 space-y-4">
+                                            <div className="flex items-center gap-3 mb-4">
+                                                <div className="w-10 h-10 bg-purple-600 rounded-full flex items-center justify-center text-white font-bold">
+                                                    1
+                                                </div>
+                                                <div>
+                                                    <h3 className="font-bold text-white">Send Payment</h3>
+                                                    <p className="text-sm text-gray-400">Transfer USDT to activate Premium</p>
+                                                </div>
+                                            </div>
+
+                                            <div className="bg-black/40 rounded-lg p-4 space-y-3">
+                                                <div className="flex justify-between items-center">
+                                                    <span className="text-gray-400 text-sm">Amount:</span>
+                                                    <span className="font-bold text-xl text-white">29 USDT</span>
+                                                </div>
+                                                <div className="flex justify-between items-center">
+                                                    <span className="text-gray-400 text-sm">Network:</span>
+                                                    <span className="font-medium text-purple-300">Tron (TRC20)</span>
+                                                </div>
+                                                <div className="border-t border-white/10 pt-3">
+                                                    <span className="text-gray-400 text-xs block mb-2">Wallet Address:</span>
+                                                    <div className="flex items-center gap-2">
+                                                        <div className="flex-1 font-mono bg-black/50 p-3 rounded text-xs break-all text-purple-300 border border-purple-500/30">
+                                                            TSWJ1i1z4aDDsDvC1N6A6UgRteJabtuo29
+                                                        </div>
+                                                        <button
+                                                            onClick={() => {
+                                                                navigator.clipboard.writeText('TSWJ1i1z4aDDsDvC1N6A6UgRteJabtuo29');
+                                                                alert('Address copied!');
+                                                            }}
+                                                            className="px-3 py-2 bg-purple-600 hover:bg-purple-500 rounded-lg text-sm font-medium transition-all"
+                                                        >
+                                                            Copy
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <div className="flex items-start gap-2 text-xs text-yellow-400 bg-yellow-400/10 border border-yellow-400/30 rounded-lg p-3">
+                                                <svg className="w-4 h-4 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                                                    <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                                                </svg>
+                                                <span>⚠️ Important: Send exactly 29 USDT on <strong>Tron network (TRC20)</strong> only. Do NOT use ERC20, BEP20, or other networks - your funds will be lost!</span>
                                             </div>
                                         </div>
-                                        <div>
-                                            <label className="block text-sm text-gray-400 mb-1">Transaction Hash</label>
-                                            <input
-                                                type="text"
-                                                placeholder="0x..."
-                                                value={paymentTxHash}
-                                                onChange={(e) => setPaymentTxHash(e.target.value)}
-                                                className="w-full px-4 py-2 rounded-lg bg-white/5 border border-white/10 outline-none focus:border-purple-500"
-                                            />
+
+                                        {/* Transaction Hash Input */}
+                                        <div className="space-y-3">
+                                            <div className="flex items-center gap-3">
+                                                <div className="w-10 h-10 bg-purple-600 rounded-full flex items-center justify-center text-white font-bold">
+                                                    2
+                                                </div>
+                                                <div>
+                                                    <h3 className="font-bold text-white">Enter Transaction Hash</h3>
+                                                    <p className="text-sm text-gray-400">Paste your transaction hash below</p>
+                                                </div>
+                                            </div>
+
+                                            <div>
+                                                <label className="block text-sm text-gray-400 mb-2">Transaction Hash (TxHash)</label>
+                                                <input
+                                                    type="text"
+                                                    placeholder="0x..."
+                                                    value={paymentTxHash}
+                                                    onChange={(e) => setPaymentTxHash(e.target.value)}
+                                                    className="w-full px-4 py-3 rounded-lg bg-black/50 border border-white/10 outline-none focus:border-purple-500 font-mono text-sm"
+                                                />
+                                                <p className="text-xs text-gray-500 mt-2">
+                                                    You can find this in your wallet after sending the transaction
+                                                </p>
+                                            </div>
                                         </div>
                                     </>
                                 )}
@@ -707,6 +881,42 @@ export default function DashboardContent() {
                                 >
                                     {showModal === "alert" ? "Set Alert" : showModal === "wallet" ? "Connect Wallet" : "Verify Payment"}
                                 </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* Upgrade Prompt Modal */}
+                {showUpgradePrompt && (
+                    <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+                        <div className="bg-gradient-to-br from-slate-900 to-slate-800 rounded-2xl p-8 max-w-md w-full border border-purple-500/30 shadow-2xl">
+                            <div className="text-center">
+                                <div className="w-16 h-16 bg-purple-600/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                                    <svg className="w-8 h-8 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                                    </svg>
+                                </div>
+                                <h3 className="text-2xl font-bold text-white mb-3">Free Tier Limit Reached</h3>
+                                <p className="text-slate-300 mb-6">
+                                    You've reached the limit for your free plan. Upgrade to Premium to unlock unlimited alerts, wallets, and more features!
+                                </p>
+                                <div className="flex gap-3">
+                                    <button
+                                        onClick={() => setShowUpgradePrompt(false)}
+                                        className="flex-1 py-3 rounded-xl bg-slate-700 hover:bg-slate-600 font-medium transition-all"
+                                    >
+                                        Maybe Later
+                                    </button>
+                                    <button
+                                        onClick={() => {
+                                            setShowUpgradePrompt(false);
+                                            setActiveTab('Settings');
+                                        }}
+                                        className="flex-1 py-3 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 font-bold transition-all shadow-lg shadow-purple-500/30"
+                                    >
+                                        Upgrade to Premium
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </div>

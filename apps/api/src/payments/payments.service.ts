@@ -4,45 +4,154 @@ import { PrismaService } from '../prisma/prisma.service';
 @Injectable()
 export class PaymentsService {
     private readonly logger = new Logger(PaymentsService.name);
-    // In a real app, this would be in env vars
-    private readonly ADMIN_WALLET = '0x1234567890123456789012345678901234567890';
+    private readonly ADMIN_WALLET_TRC20 = 'TSWJ1i1z4aDDsDvC1N6A6UgRteJabtuo29';
+    private readonly MONTHLY_PRICE_USD = 29;
 
     constructor(private prisma: PrismaService) { }
 
     async verifyPayment(userId: string, txHash: string) {
-        // In a real app, we would:
-        // 1. Connect to Ethereum/Tron node
-        // 2. Get transaction receipt
-        // 3. Verify it's a transfer to our wallet
-        // 4. Verify the amount is correct (e.g. 10 USDT)
-        // 5. Verify the token contract address matches USDT
+        try {
+            // Check if this transaction hash was already used
+            const existingPayment = await this.prisma.payment.findUnique({
+                where: { txHash }
+            });
 
-        // For MVP, we simulate this:
-        if (!txHash.startsWith('0x') || txHash.length !== 66) {
+            if (existingPayment) {
+                return {
+                    success: false,
+                    message: 'This transaction has already been used for a payment.'
+                };
+            }
+
+            // In a real app, we would verify the transaction on-chain:
+            // 1. Connect to Tron node (TronWeb)
+            // 2. Get transaction details
+            // 3. Verify it's a USDT TRC20 transfer
+            // 4. Verify recipient is our wallet
+            // 5. Verify amount is exactly 29 USDT
+            // 6. Verify transaction is confirmed
+
+            // For MVP, we simulate this with basic validation
+            if (!txHash || txHash.length < 20) {
+                return {
+                    success: false,
+                    message: 'Invalid transaction hash format.'
+                };
+            }
+
+            this.logger.log(`Processing payment for user ${userId} with hash ${txHash}`);
+
+            // Simulate processing delay
+            await new Promise(resolve => setTimeout(resolve, 1500));
+
+            // Calculate subscription end date (30 days from now)
+            const premiumUntil = new Date();
+            premiumUntil.setDate(premiumUntil.getDate() + 30);
+
+            // Create payment record
+            const payment = await this.prisma.payment.create({
+                data: {
+                    userId,
+                    txHash,
+                    amount: this.MONTHLY_PRICE_USD,
+                    currency: 'USDT',
+                    network: 'TRC20',
+                    status: 'verified',
+                    subscriptionMonths: 1,
+                    verifiedAt: new Date(),
+                }
+            });
+
+            // Update user subscription
+            const user = await this.prisma.user.update({
+                where: { id: userId },
+                data: {
+                    tier: 'premium',
+                    subscriptionStatus: 'active',
+                    premiumUntil,
+                    lastPaymentDate: new Date(),
+                },
+            });
+
+            this.logger.log(`User ${user.email} upgraded to premium until ${premiumUntil.toISOString()}`);
+
+            return {
+                success: true,
+                message: `Payment verified! You now have Premium access until ${premiumUntil.toLocaleDateString()}.`,
+                tier: user.tier,
+                premiumUntil: premiumUntil.toISOString(),
+            };
+        } catch (error) {
+            this.logger.error(`Error verifying payment: ${error.message}`);
             return {
                 success: false,
-                message: 'Invalid transaction hash format. Please ensure it is a valid Ethereum/BSC transaction hash.'
+                message: 'Failed to process payment. Please contact support.'
             };
         }
+    }
 
-        // Simulate checking for USDT transfer
-        this.logger.log(`Verifying USDT payment for user ${userId} with hash ${txHash}`);
+    /**
+     * Check and expire subscriptions that have passed their end date
+     * This should be run by a cron job daily
+     */
+    async checkExpiredSubscriptions() {
+        const now = new Date();
 
-        // Simulate processing delay
-        await new Promise(resolve => setTimeout(resolve, 1000));
-
-        // Upgrade user to premium
-        const user = await this.prisma.user.update({
-            where: { id: userId },
-            data: { tier: 'premium' },
+        const expiredUsers = await this.prisma.user.updateMany({
+            where: {
+                subscriptionStatus: 'active',
+                premiumUntil: {
+                    lt: now
+                }
+            },
+            data: {
+                tier: 'free',
+                subscriptionStatus: 'expired'
+            }
         });
 
-        this.logger.log(`User ${user.email} upgraded to premium`);
+        this.logger.log(`Expired ${expiredUsers.count} subscriptions`);
+        return expiredUsers.count;
+    }
+
+    /**
+     * Get user's payment history
+     */
+    async getPaymentHistory(userId: string) {
+        return this.prisma.payment.findMany({
+            where: { userId },
+            orderBy: { createdAt: 'desc' }
+        });
+    }
+
+    /**
+     * Get subscription status for a user
+     */
+    async getSubscriptionStatus(userId: string) {
+        const user = await this.prisma.user.findUnique({
+            where: { id: userId },
+            select: {
+                tier: true,
+                subscriptionStatus: true,
+                premiumUntil: true,
+                lastPaymentDate: true,
+            }
+        });
+
+        if (!user) {
+            return null;
+        }
+
+        const now = new Date();
+        const daysRemaining = user.premiumUntil
+            ? Math.ceil((user.premiumUntil.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
+            : 0;
 
         return {
-            success: true,
-            message: 'Payment verified successfully! You are now a Premium member.',
-            tier: user.tier
+            ...user,
+            daysRemaining,
+            isActive: user.subscriptionStatus === 'active' && daysRemaining > 0,
+            needsRenewal: daysRemaining <= 7 && daysRemaining > 0,
         };
     }
 }

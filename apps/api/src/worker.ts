@@ -2,6 +2,7 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { Logger } from '@nestjs/common';
 import { AlertCheckerService } from './worker/alert-checker.service';
+import { PaymentsService } from './payments/payments.service';
 
 async function bootstrap() {
     const logger = new Logger('Worker');
@@ -9,19 +10,33 @@ async function bootstrap() {
 
     const app = await NestFactory.createApplicationContext(AppModule);
     const alertChecker = app.get(AlertCheckerService);
+    const paymentsService = app.get(PaymentsService);
 
     // Check alerts every 30 seconds
-    const CHECK_INTERVAL = 30 * 1000; // 30 seconds
+    const ALERT_CHECK_INTERVAL = 30 * 1000; // 30 seconds
 
-    logger.log(`Worker started. Checking alerts every ${CHECK_INTERVAL / 1000} seconds`);
+    // Check subscriptions once per day (24 hours)
+    const SUBSCRIPTION_CHECK_INTERVAL = 24 * 60 * 60 * 1000; // 24 hours
 
-    // Run immediately on startup
+    logger.log(`Worker started.`);
+    logger.log(`- Checking alerts every ${ALERT_CHECK_INTERVAL / 1000} seconds`);
+    logger.log(`- Checking subscriptions every ${SUBSCRIPTION_CHECK_INTERVAL / (1000 * 60 * 60)} hours`);
+
+    // Run alert checker immediately on startup
     await alertChecker.checkAlerts();
 
-    // Then run on interval
+    // Run subscription checker immediately on startup
+    await paymentsService.checkExpiredSubscriptions();
+
+    // Then run alert checker on interval
     setInterval(async () => {
         await alertChecker.checkAlerts();
-    }, CHECK_INTERVAL);
+    }, ALERT_CHECK_INTERVAL);
+
+    // Run subscription checker daily
+    setInterval(async () => {
+        await paymentsService.checkExpiredSubscriptions();
+    }, SUBSCRIPTION_CHECK_INTERVAL);
 }
 
 bootstrap().catch((error) => {

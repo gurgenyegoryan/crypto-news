@@ -24,9 +24,15 @@ model User {
   verificationToken       String?   @unique @map("verification_token")
   verificationTokenExpiry DateTime? @map("verification_token_expiry")
 
+  // Subscription management
+  premiumUntil            DateTime? @map("premium_until")
+  lastPaymentDate         DateTime? @map("last_payment_date")
+  subscriptionStatus      String    @default("inactive") @map("subscription_status") // active, inactive, expired
+
   wallets     Wallet[]
   alerts      Alert[]
   snapshots   PortfolioSnapshot[]
+  payments    Payment[]
 
   @@map("users")
 }
@@ -67,4 +73,21 @@ model PortfolioSnapshot {
   user          User     @relation(fields: [userId], references: [id])
 
   @@map("portfolio_snapshots")
+}
+
+model Payment {
+  id              String   @id @default(uuid())
+  userId          String   @map("user_id")
+  txHash          String   @unique @map("tx_hash")
+  amount          Decimal
+  currency        String   @default("USDT")
+  network         String   @default("TRC20")
+  status          String   @default("pending") // pending, verified, failed
+  subscriptionMonths Int   @default(1) @map("subscription_months")
+  createdAt       DateTime @default(now()) @map("created_at")
+  verifiedAt      DateTime? @map("verified_at")
+
+  user            User     @relation(fields: [userId], references: [id])
+
+  @@map("payments")
 }

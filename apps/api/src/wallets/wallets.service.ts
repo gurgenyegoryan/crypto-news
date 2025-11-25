@@ -16,7 +16,7 @@ export class WalletsService {
         if (user.tier !== 'premium') {
             const existingCount = await this.prisma.wallet.count({ where: { userId } });
             if (existingCount >= 1) {
-                throw new Error('Free tier users can only have one wallet');
+                throw new Error('Free tier limit reached. Please upgrade to Premium to add more wallets.');
             }
         }
 

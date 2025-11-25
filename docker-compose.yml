@@ -1,0 +1,108 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: cryptomonitor-postgres
+    environment:
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
+      POSTGRES_DB: ${DB_NAME:-cryptomonitor}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - cryptomonitor-network
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: cryptomonitor-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - cryptomonitor-network
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build:
+      context: ./apps/api
+      dockerfile: Dockerfile
+    container_name: cryptomonitor-api
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgres://${DB_USER:-postgres}:${DB_PASSWORD:-postgres}@postgres:5432/${DB_NAME:-cryptomonitor}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      PORT: 3000
+      JWT_SECRET: 07140530688366544491071eba37720f
+      TELEGRAM_BOT_TOKEN: 8244781862:AAGcdsGEy0vdb39ksus55ATUhBcmSqv_vRY
+    ports:
+      - "3000:3000"
+
+    networks:
+      - cryptomonitor-network
+    command: node dist/src/main.js
+
+  web:
+    # image: crypto-news-web
+    build:
+      context: ./apps/web
+      dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: http://localhost:3000
+    container_name: cryptomonitor-web
+    depends_on:
+      - api
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost:3000
+    ports:
+      - "3001:3000"
+
+    networks:
+      - cryptomonitor-network
+    command: npm run start
+
+  # Worker service for background tasks (blockchain syncing, alerts)
+  worker:
+    build:
+      context: ./apps/api # Reusing API build context as it shares logic
+      dockerfile: Dockerfile.worker
+    container_name: cryptomonitor-worker
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgres://${DB_USER:-postgres}:${DB_PASSWORD:-postgres}@postgres:5432/${DB_NAME:-cryptomonitor}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+
+    networks:
+      - cryptomonitor-network
+    command: npm run start:worker
+
+volumes:
+  postgres_data:
+  redis_data:
+
+
+networks:
+  cryptomonitor-network:
+    driver: bridge

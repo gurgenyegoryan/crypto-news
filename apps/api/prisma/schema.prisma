@@ -1,0 +1,70 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id          String   @id @default(uuid())
+  email       String   @unique
+  password    String?  // Hashed, for email login
+  name        String?
+  telegramId  String?  @unique @map("telegram_id")
+  createdAt   DateTime @default(now()) @map("created_at")
+  tier        String   @default("free")
+  
+  isVerified              Boolean   @default(false) @map("is_verified")
+  verificationToken       String?   @unique @map("verification_token")
+  verificationTokenExpiry DateTime? @map("verification_token_expiry")
+
+  wallets     Wallet[]
+  alerts      Alert[]
+  snapshots   PortfolioSnapshot[]
+
+  @@map("users")
+}
+
+model Wallet {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  address   String
+  chain     String   // eth, sol, bsc
+  label     String?
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user      User     @relation(fields: [userId], references: [id])
+
+  @@map("wallets")
+}
+
+model Alert {
+  id          String   @id @default(uuid())
+  userId      String   @map("user_id")
+  type        String   // price_above, price_below
+  token       String
+  price       Decimal
+  isActive    Boolean  @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  user        User     @relation(fields: [userId], references: [id])
+
+  @@map("alerts")
+}
+
+model PortfolioSnapshot {
+  id            String   @id @default(uuid())
+  userId        String   @map("user_id")
+  totalValueUsd Decimal  @map("total_value_usd")
+  snapshotAt    DateTime @default(now()) @map("snapshot_at")
+
+  user          User     @relation(fields: [userId], references: [id])
+
+  @@map("portfolio_snapshots")
+}

@@ -43,27 +43,33 @@ export default function CopyTrading() {
 
     const fetchConfigs = async () => {
         try {
-            const token = localStorage.getItem('token');
+            const token = localStorage.getItem('auth_token');
             const response = await fetch('http://localhost:3000/copy-trading/configs', {
                 headers: { 'Authorization': `Bearer ${token}` },
             });
-            const data = await response.json();
-            setConfigs(data);
+            if (response.ok) {
+                const data = await response.json();
+                setConfigs(Array.isArray(data) ? data : []);
+            }
         } catch (error) {
             console.error('Error fetching configs:', error);
+            setConfigs([]);
         }
     };
 
     const fetchTrades = async () => {
         try {
-            const token = localStorage.getItem('token');
+            const token = localStorage.getItem('auth_token');
             const response = await fetch('http://localhost:3000/copy-trading/history?limit=20', {
                 headers: { 'Authorization': `Bearer ${token}` },
             });
-            const data = await response.json();
-            setTrades(data);
+            if (response.ok) {
+                const data = await response.json();
+                setTrades(Array.isArray(data) ? data : []);
+            }
         } catch (error) {
             console.error('Error fetching trades:', error);
+            setTrades([]);
         }
     };
 
@@ -199,8 +205,8 @@ export default function CopyTrading() {
                                         <button
                                             onClick={() => toggleConfig(config.id)}
                                             className={`p-2 rounded-lg transition-colors ${config.active
-                                                    ? 'bg-yellow-600 hover:bg-yellow-700 text-white'
-                                                    : 'bg-green-600 hover:bg-green-700 text-white'
+                                                ? 'bg-yellow-600 hover:bg-yellow-700 text-white'
+                                                : 'bg-green-600 hover:bg-green-700 text-white'
                                                 }`}
                                         >
                                             {config.active ? <Pause className="w-5 h-5" /> : <Play className="w-5 h-5" />}
@@ -252,8 +258,8 @@ export default function CopyTrading() {
                                         </td>
                                         <td className="px-6 py-4">
                                             <span className={`px-2 py-1 rounded text-xs font-semibold ${trade.status === 'executed' ? 'bg-green-500/20 text-green-400' :
-                                                    trade.status === 'pending' ? 'bg-yellow-500/20 text-yellow-400' :
-                                                        'bg-red-500/20 text-red-400'
+                                                trade.status === 'pending' ? 'bg-yellow-500/20 text-yellow-400' :
+                                                    'bg-red-500/20 text-red-400'
                                                 }`}>
                                                 {trade.status}
                                             </span>

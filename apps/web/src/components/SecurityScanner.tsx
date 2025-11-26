@@ -28,7 +28,7 @@ export default function SecurityScanner() {
         setAnalysis(null);
 
         try {
-            const token = localStorage.getItem('token');
+            const token = localStorage.getItem('auth_token');
             const response = await fetch('http://localhost:3000/security/analyze', {
                 method: 'POST',
                 headers: {
@@ -149,8 +149,8 @@ export default function SecurityScanner() {
                     {/* Security Checks */}
                     <div className="grid grid-cols-2 gap-4">
                         <div className={`rounded-xl p-6 border ${analysis.isHoneypot
-                                ? 'bg-red-900/20 border-red-500/30'
-                                : 'bg-green-900/20 border-green-500/30'
+                            ? 'bg-red-900/20 border-red-500/30'
+                            : 'bg-green-900/20 border-green-500/30'
                             }`}>
                             <div className="flex items-center gap-3">
                                 {analysis.isHoneypot ? (
@@ -168,8 +168,8 @@ export default function SecurityScanner() {
                         </div>
 
                         <div className={`rounded-xl p-6 border ${analysis.isRugPull
-                                ? 'bg-red-900/20 border-red-500/30'
-                                : 'bg-green-900/20 border-green-500/30'
+                            ? 'bg-red-900/20 border-red-500/30'
+                            : 'bg-green-900/20 border-green-500/30'
                             }`}>
                             <div className="flex items-center gap-3">
                                 {analysis.isRugPull ? (
@@ -187,8 +187,8 @@ export default function SecurityScanner() {
                         </div>
 
                         <div className={`rounded-xl p-6 border ${analysis.ownershipRenounced
-                                ? 'bg-green-900/20 border-green-500/30'
-                                : 'bg-yellow-900/20 border-yellow-500/30'
+                            ? 'bg-green-900/20 border-green-500/30'
+                            : 'bg-yellow-900/20 border-yellow-500/30'
                             }`}>
                             <div className="flex items-center gap-3">
                                 {analysis.ownershipRenounced ? (
@@ -206,8 +206,8 @@ export default function SecurityScanner() {
                         </div>
 
                         <div className={`rounded-xl p-6 border ${analysis.liquidityLocked
-                                ? 'bg-green-900/20 border-green-500/30'
-                                : 'bg-yellow-900/20 border-yellow-500/30'
+                            ? 'bg-green-900/20 border-green-500/30'
+                            : 'bg-yellow-900/20 border-yellow-500/30'
                             }`}>
                             <div className="flex items-center gap-3">
                                 {analysis.liquidityLocked ? (

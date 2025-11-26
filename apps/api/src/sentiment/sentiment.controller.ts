@@ -8,7 +8,15 @@ export class SentimentController {
 
     @Get(':token')
     async getCurrentSentiment(@Param('token') token: string) {
-        return this.sentimentService.getCurrentSentiment(token);
+        const sentiment = await this.sentimentService.getCurrentSentiment(token);
+        // Return default object if null to prevent frontend JSON parse error
+        return sentiment || {
+            token,
+            score: 0,
+            volume: 0,
+            source: 'no_data',
+            timestamp: new Date(),
+        };
     }
 
     @Get(':token/history')
@@ -17,7 +25,8 @@ export class SentimentController {
         @Query('hours') hours?: string,
     ) {
         const hoursNum = hours ? parseInt(hours) : 24;
-        return this.sentimentService.getSentimentHistory(token, hoursNum);
+        const history = await this.sentimentService.getSentimentHistory(token, hoursNum);
+        return history || [];
     }
 
     @UseGuards(AuthGuard('jwt'))

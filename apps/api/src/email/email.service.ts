@@ -24,7 +24,7 @@ export class EmailService {
     }
 
     async sendVerificationEmail(email: string, token: string) {
-        const verificationUrl = `${process.env.FRONTEND_URL || 'http://localhost:3001'}/verify?token=${token}`;
+        const verificationUrl = `${process.env.FRONTEND_URL || 'http://web:3000'}/verify?token=${token}`;
 
         const html = `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f9f9f9; border-radius: 10px;">

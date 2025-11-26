@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { createPublicClient, http, PublicClient, formatEther } from 'viem';
+import { createPublicClient, http, PublicClient, formatEther, getContract } from 'viem';
 import { mainnet } from 'viem/chains';
 import axios from 'axios';
 
@@ -238,9 +238,24 @@ export class BlockchainService {
                 if (response.data.result && response.data.result.value) {
                     return (response.data.result.value / 1000000000).toFixed(4);
                 }
-                return "0.0000";
             }
 
+            if (normalizedChain === 'bnb' || normalizedChain === 'bsc') {
+                // Use BSC public RPC
+                const response = await axios.post('https://bsc-dataseed.binance.org/', {
+                    jsonrpc: "2.0",
+                    id: 1,
+                    method: "eth_getBalance",
+                    params: [address, "latest"]
+                });
+
+                if (response.data.result) {
+                    const balanceWei = parseInt(response.data.result, 16);
+                    return (balanceWei / 1e18).toFixed(4);
+                }
+            }
+
+            console.error(`Unsupported chain: ${chain}`);
             return "0.0000";
         } catch (error) {
             // Assuming 'this.logger' is available or fallback to console.error
@@ -248,6 +263,67 @@ export class BlockchainService {
             // For now, I'll assume it's a placeholder for a logger or needs to be console.error
             // Given the original code uses console.error, I will use that for consistency
             console.error(`Error fetching balance for ${address} on ${chain}: ${error.message}`);
+            return "0.0000";
+        }
+    }
+
+    /**
+     * Get ERC-20/BEP-20 token balance
+     */
+    async getTokenBalance(
+        walletAddress: string,
+        tokenContract: string,
+        chain: string = 'ethereum',
+        decimals: number = 18
+    ): Promise<string> {
+        try {
+            const normalizedChain = chain.toLowerCase();
+
+            // ERC-20 balanceOf function signature
+            const balanceOfABI = [{
+                "constant": true,
+                "inputs": [{ "name": "_owner", "type": "address" }],
+                "name": "balanceOf",
+                "outputs": [{ "name": "balance", "type": "uint256" }],
+                "type": "function"
+            }];
+
+            if (normalizedChain === 'eth' || normalizedChain === 'ethereum') {
+                // Use viem for Ethereum
+                const contract = getContract({
+                    address: tokenContract as `0x${string}`,
+                    abi: balanceOfABI,
+                    client: this.ethClient
+                });
+
+                const balance = await contract.read.balanceOf([walletAddress as `0x${string}`]);
+                return (Number(balance) / Math.pow(10, decimals)).toFixed(decimals > 6 ? 6 : decimals);
+            }
+
+            if (normalizedChain === 'bnb' || normalizedChain === 'bsc') {
+                // Use BSC RPC for BEP-20 tokens
+                const data = `0x70a08231000000000000000000000000${walletAddress.substring(2)}`;
+
+                const response = await axios.post('https://bsc-dataseed.binance.org/', {
+                    jsonrpc: "2.0",
+                    id: 1,
+                    method: "eth_call",
+                    params: [{
+                        to: tokenContract,
+                        data: data
+                    }, "latest"]
+                });
+
+                if (response.data.result) {
+                    const balance = parseInt(response.data.result, 16);
+                    return (balance / Math.pow(10, decimals)).toFixed(decimals > 6 ? 6 : decimals);
+                }
+            }
+
+            console.error(`Token balance not supported for chain: ${chain}`);
+            return "0.0000";
+        } catch (error) {
+            console.error(`Error fetching token balance for ${walletAddress} on ${chain}: ${error.message}`);
             return "0.0000";
         }
     }

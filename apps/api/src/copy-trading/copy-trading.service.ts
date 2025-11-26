@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 
 export interface CopyTradeConfig {
@@ -35,9 +35,6 @@ export class CopyTradingService {
         }));
     }
 
-    /**
-     * Create copy trading configuration
-     */
     async createConfig(userId: string, data: {
         followedWallet: string;
         chain: string;
@@ -49,18 +46,18 @@ export class CopyTradingService {
         const user = await this.prisma.user.findUnique({ where: { id: userId } });
 
         if (!user) {
-            throw new Error('User not found');
+            throw new NotFoundException('User not found');
         }
 
         if (user.tier !== 'premium' && user.tier !== 'pro') {
-            throw new Error('Copy trading is only available for Pro users');
+            throw new ForbiddenException('Copy trading is only available for Pro users');
         }
 
         // Check existing config count
         const configCount = await this.prisma.copyTradingConfig.count({ where: { userId } });
 
         if (user.tier === 'premium' && configCount >= 3) {
-            throw new Error('Premium tier limited to 3 copy trading configs. Upgrade to Pro for unlimited.');
+            throw new ForbiddenException('Premium tier limited to 3 copy trading configs. Upgrade to Pro for unlimited.');
         }
 
         return this.prisma.copyTradingConfig.create({

@@ -25,7 +25,7 @@ export default function SentimentAnalysis() {
     const fetchSentiment = async () => {
         setLoading(true);
         try {
-            const response = await fetch(`http://localhost:3000/sentiment/${selectedToken}`);
+            const response = await fetch(`http://api:3000/sentiment/${selectedToken}`);
             const data = await response.json();
             setSentiment(data);
         } catch (error) {
@@ -37,7 +37,7 @@ export default function SentimentAnalysis() {
 
     const fetchHistory = async () => {
         try {
-            const response = await fetch(`http://localhost:3000/sentiment/${selectedToken}/history?hours=24`);
+            const response = await fetch(`http://api:3000/sentiment/${selectedToken}/history?hours=24`);
             const data = await response.json();
             setHistory(data);
         } catch (error) {
@@ -81,8 +81,8 @@ export default function SentimentAnalysis() {
                             key={token}
                             onClick={() => setSelectedToken(token)}
                             className={`px-4 py-3 rounded-lg font-semibold transition-all ${selectedToken === token
-                                    ? 'bg-purple-600 text-white shadow-lg shadow-purple-500/30'
-                                    : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                                ? 'bg-purple-600 text-white shadow-lg shadow-purple-500/30'
+                                : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
                                 }`}
                         >
                             {token}

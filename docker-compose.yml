@@ -65,12 +65,12 @@ services:
       context: ./apps/web
       dockerfile: Dockerfile
       args:
-        NEXT_PUBLIC_API_URL: http://localhost:3000
+        NEXT_PUBLIC_API_URL: http://api:3000
     container_name: cryptomonitor-web
     depends_on:
       - api
     environment:
-      NEXT_PUBLIC_API_URL: http://localhost:3000
+      NEXT_PUBLIC_API_URL: http://api:3000
     ports:
       - "3001:3000"
 

@@ -9,7 +9,7 @@ export class CopyTradingController {
     @UseGuards(AuthGuard('jwt'))
     @Get('configs')
     async getConfigs(@Request() req: any) {
-        return this.copyTradingService.getUserConfigs(req.user.userId);
+        return this.copyTradingService.getUserConfigs(req.user.id);
     }
 
     @UseGuards(AuthGuard('jwt'))
@@ -21,31 +21,31 @@ export class CopyTradingController {
         stopLossPercent?: number;
         takeProfitPercent?: number;
     }) {
-        return this.copyTradingService.createConfig(req.user.userId, body);
+        return this.copyTradingService.createConfig(req.user.id, body);
     }
 
     @UseGuards(AuthGuard('jwt'))
     @Patch('configs/:id/toggle')
     async toggleConfig(@Request() req: any, @Param('id') id: string) {
-        return this.copyTradingService.toggleConfig(req.user.userId, id);
+        return this.copyTradingService.toggleConfig(req.user.id, id);
     }
 
     @UseGuards(AuthGuard('jwt'))
     @Delete('configs/:id')
     async deleteConfig(@Request() req: any, @Param('id') id: string) {
-        return this.copyTradingService.deleteConfig(req.user.userId, id);
+        return this.copyTradingService.deleteConfig(req.user.id, id);
     }
 
     @UseGuards(AuthGuard('jwt'))
     @Get('history')
     async getHistory(@Request() req: any, @Query('limit') limit?: string) {
         const limitNum = limit ? parseInt(limit) : 50;
-        return this.copyTradingService.getTradeHistory(req.user.userId, limitNum);
+        return this.copyTradingService.getTradeHistory(req.user.id, limitNum);
     }
 
     @UseGuards(AuthGuard('jwt'))
     @Get('configs/:id/performance')
     async getPerformance(@Request() req: any, @Param('id') id: string) {
-        return this.copyTradingService.getConfigPerformance(req.user.userId, id);
+        return this.copyTradingService.getConfigPerformance(req.user.id, id);
     }
 }

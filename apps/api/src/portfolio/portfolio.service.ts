@@ -100,9 +100,23 @@ export class PortfolioService {
             asset.allocation = totalValue > 0 ? (asset.value / totalValue) * 100 : 0;
         });
 
+        // Calculate performance metrics
+        let performance24h = 0;
+        let performance7d = 0;
+
+        try {
+            const performance = await this.getPerformance(userId);
+            performance24h = performance.change24h;
+            performance7d = performance.change7d;
+        } catch (error) {
+            console.error('Error calculating performance:', error);
+        }
+
         return {
             totalValue,
             assets,
+            performance24h,
+            performance7d,
         };
     }
 

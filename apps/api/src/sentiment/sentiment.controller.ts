@@ -32,7 +32,7 @@ export class SentimentController {
     @UseGuards(AuthGuard('jwt'))
     @Get('alerts/my')
     async getUserAlerts(@Request() req: any) {
-        return this.sentimentService.getUserAlerts(req.user.userId);
+        return this.sentimentService.getUserAlerts(req.user.id);
     }
 
     @UseGuards(AuthGuard('jwt'))
@@ -42,12 +42,12 @@ export class SentimentController {
         condition: string;
         threshold: number;
     }) {
-        return this.sentimentService.createAlert(req.user.userId, body);
+        return this.sentimentService.createAlert(req.user.id, body);
     }
 
     @UseGuards(AuthGuard('jwt'))
     @Delete('alerts/:id')
     async deleteAlert(@Request() req: any, @Param('id') id: string) {
-        return this.sentimentService.deleteAlert(req.user.userId, id);
+        return this.sentimentService.deleteAlert(req.user.id, id);
     }
 }

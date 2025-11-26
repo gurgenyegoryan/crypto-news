@@ -44,7 +44,7 @@ export default function CopyTrading() {
     const fetchConfigs = async () => {
         try {
             const token = localStorage.getItem('auth_token');
-            const response = await fetch('http://api:3000/copy-trading/configs', {
+            const response = await fetch('http://localhost:3000/copy-trading/configs', {
                 headers: { 'Authorization': `Bearer ${token}` },
             });
             if (response.ok) {
@@ -60,7 +60,7 @@ export default function CopyTrading() {
     const fetchTrades = async () => {
         try {
             const token = localStorage.getItem('auth_token');
-            const response = await fetch('http://api:3000/copy-trading/history?limit=20', {
+            const response = await fetch('http://localhost:3000/copy-trading/history?limit=20', {
                 headers: { 'Authorization': `Bearer ${token}` },
             });
             if (response.ok) {
@@ -76,7 +76,7 @@ export default function CopyTrading() {
     const createConfig = async () => {
         try {
             const token = localStorage.getItem('token');
-            const response = await fetch('http://api:3000/copy-trading/configs', {
+            const response = await fetch('http://localhost:3000/copy-trading/configs', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -104,7 +104,7 @@ export default function CopyTrading() {
     const toggleConfig = async (id: string) => {
         try {
             const token = localStorage.getItem('token');
-            await fetch(`http://api:3000/copy-trading/configs/${id}/toggle`, {
+            await fetch(`http://localhost:3000/copy-trading/configs/${id}/toggle`, {
                 method: 'PATCH',
                 headers: { 'Authorization': `Bearer ${token}` },
             });
@@ -117,7 +117,7 @@ export default function CopyTrading() {
     const deleteConfig = async (id: string) => {
         try {
             const token = localStorage.getItem('token');
-            await fetch(`http://api:3000/copy-trading/configs/${id}`, {
+            await fetch(`http://localhost:3000/copy-trading/configs/${id}`, {
                 method: 'DELETE',
                 headers: { 'Authorization': `Bearer ${token}` },
             });

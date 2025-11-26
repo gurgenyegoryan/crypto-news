@@ -57,28 +57,55 @@ export default function Home() {
       {/* Features Grid */}
       <section id="features" className="py-24 bg-black/50">
         <div className="container mx-auto px-6">
-          <h2 className="text-3xl md:text-4xl font-bold text-center mb-16">
+          <h2 className="text-3xl md:text-4xl font-bold text-center mb-4">
             Everything you need to <span className="text-purple-400">stay ahead</span>
           </h2>
+          <p className="text-center text-gray-400 mb-16 max-w-2xl mx-auto">
+            Production-ready features with real blockchain data. No mock data, no simulations.
+          </p>
           <div className="grid md:grid-cols-3 gap-8">
             {[
               {
-                title: "Real-time Alerts",
-                desc: "Get instant notifications for price movements and wallet transactions.",
-                icon: "⚡"
+                title: "Multi-Chain Portfolio",
+                desc: "Track ETH, BTC, SOL, and BNB balances in real-time. Support for ERC-20 and BEP-20 tokens.",
+                icon: "🔗",
+                badge: "4 Chains"
               },
               {
-                title: "Multi-Chain Support",
-                desc: "Track assets across Ethereum, Solana, BSC, and Base in one view.",
-                icon: "🔗"
+                title: "Security Scanner",
+                desc: "Real honeypot detection, bytecode analysis, and contract verification. Know before you buy.",
+                icon: "🛡️",
+                badge: "Live API"
               },
               {
                 title: "Whale Watching",
-                desc: "Follow smart money and get alerted when they make a move.",
-                icon: "🐋"
+                desc: "Track large transactions across all chains. Get alerted when whales move.",
+                icon: "🐋",
+                badge: "Real-time"
+              },
+              {
+                title: "AI Sentiment Analysis",
+                desc: "Reddit sentiment tracking for top cryptocurrencies. Analyze market mood in real-time.",
+                icon: "🤖",
+                badge: "AI Powered"
+              },
+              {
+                title: "Copy Trading",
+                desc: "Monitor whale wallets and track their trades. Learn from the best traders.",
+                icon: "📊",
+                badge: "Pro Feature"
+              },
+              {
+                title: "Portfolio Performance",
+                desc: "24h/7d/30d performance tracking with automated snapshots and historical data.",
+                icon: "📈",
+                badge: "Analytics"
               }
             ].map((feature, i) => (
-              <div key={i} className="p-8 rounded-2xl bg-white/5 border border-white/10 hover:border-purple-500/50 transition-all group">
+              <div key={i} className="p-8 rounded-2xl bg-white/5 border border-white/10 hover:border-purple-500/50 transition-all group relative overflow-hidden">
+                <div className="absolute top-4 right-4 px-3 py-1 rounded-full bg-purple-500/20 text-purple-300 text-xs font-bold">
+                  {feature.badge}
+                </div>
                 <div className="text-4xl mb-6 group-hover:scale-110 transition-transform duration-300">{feature.icon}</div>
                 <h3 className="text-xl font-bold mb-4">{feature.title}</h3>
                 <p className="text-gray-400 leading-relaxed">{feature.desc}</p>
@@ -106,12 +133,15 @@ export default function Home() {
                 name: "Premium",
                 price: "$29",
                 features: [
-                  "Unlimited price alerts",
-                  "Unlimited wallet tracking",
-                  "Real-time whale transaction alerts",
-                  "Multi-chain support",
-                  "Advanced portfolio analytics",
-                  "Priority Telegram notifications",
+                  "Unlimited wallets & alerts",
+                  "Multi-chain support (ETH, BTC, SOL, BNB)",
+                  "ERC-20/BEP-20 token tracking",
+                  "🛡️ Security Scanner with honeypot detection",
+                  "🤖 AI Sentiment Analysis",
+                  "📊 Copy Trading & whale monitoring",
+                  "📈 Advanced portfolio analytics",
+                  "⚡ Real-time Telegram notifications",
+                  "🔔 Whale transaction alerts",
                   "24/7 priority support"
                 ],
                 cta: "Upgrade to Premium",

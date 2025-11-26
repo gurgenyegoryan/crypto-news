@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { ScheduleModule } from '@nestjs/schedule';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { PrismaModule } from './prisma/prisma.module';
@@ -14,8 +15,16 @@ import { WhaleWatchModule } from './whale-watch/whale-watch.module';
 import { PaymentsModule } from './payments/payments.module';
 import { SupportModule } from './support/support.module';
 
+// Premium features
+import { BlockchainModule } from './blockchain/blockchain.module';
+import { SentimentModule } from './sentiment/sentiment.module';
+import { PortfolioModule } from './portfolio/portfolio.module';
+import { SecurityModule } from './security/security.module';
+import { CopyTradingModule } from './copy-trading/copy-trading.module';
+
 @Module({
   imports: [
+    ScheduleModule.forRoot(), // Enable cron jobs
     PrismaModule,
     AuthModule,
     UsersModule,
@@ -28,6 +37,12 @@ import { SupportModule } from './support/support.module';
     WhaleWatchModule,
     PaymentsModule,
     SupportModule,
+    // Premium features
+    BlockchainModule,
+    SentimentModule,
+    PortfolioModule,
+    SecurityModule,
+    CopyTradingModule,
   ],
   controllers: [AppController],
   providers: [AppService],

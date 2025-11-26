@@ -12,28 +12,38 @@ datasource db {
 }
 
 model User {
-  id          String   @id @default(uuid())
-  email       String   @unique
-  password    String?  // Hashed, for email login
-  name        String?
-  telegramId  String?  @unique @map("telegram_id")
-  createdAt   DateTime @default(now()) @map("created_at")
-  tier        String   @default("free")
-  
+  id         String   @id @default(uuid())
+  email      String   @unique
+  password   String? // Hashed, for email login
+  name       String?
+  telegramId String?  @unique @map("telegram_id")
+  createdAt  DateTime @default(now()) @map("created_at")
+  tier       String   @default("free")
+
   isVerified              Boolean   @default(false) @map("is_verified")
   verificationToken       String?   @unique @map("verification_token")
   verificationTokenExpiry DateTime? @map("verification_token_expiry")
 
   // Subscription management
-  premiumUntil            DateTime? @map("premium_until")
-  lastPaymentDate         DateTime? @map("last_payment_date")
-  subscriptionStatus      String    @default("inactive") @map("subscription_status") // active, inactive, expired
+  premiumUntil       DateTime? @map("premium_until")
+  lastPaymentDate    DateTime? @map("last_payment_date")
+  subscriptionStatus String    @default("inactive") @map("subscription_status") // active, inactive, expired
 
-  wallets     Wallet[]
-  alerts      Alert[]
-  snapshots   PortfolioSnapshot[]
-  payments    Payment[] @relation("UserPayments")
-  supportTickets SupportTicket[] @relation("UserSupportTickets")
+  wallets        Wallet[]
+  alerts         Alert[]
+  snapshots      PortfolioSnapshot[]
+  payments       Payment[]           @relation("UserPayments")
+  supportTickets SupportTicket[]     @relation("UserSupportTickets")
+
+  // Premium features relations
+  whaleAlerts         WhaleAlert[]         @relation("UserWhaleAlerts")
+  trackedWallets      TrackedWallet[]      @relation("UserTrackedWallets")
+  sentimentAlerts     SentimentAlert[]     @relation("UserSentimentAlerts")
+  exchangeConnections ExchangeConnection[] @relation("UserExchangeConnections")
+  defiPositions       DeFiPosition[]       @relation("UserDeFiPositions")
+  tokenApprovals      TokenApproval[]      @relation("UserTokenApprovals")
+  copyTradingConfigs  CopyTradingConfig[]  @relation("UserCopyTradingConfigs")
+  copyTrades          CopyTrade[]          @relation("UserCopyTrades")
 
   @@map("users")
 }
@@ -42,25 +52,25 @@ model Wallet {
   id        String   @id @default(uuid())
   userId    String   @map("user_id")
   address   String
-  chain     String   // eth, sol, bsc
+  chain     String // eth, sol, bsc
   label     String?
   createdAt DateTime @default(now()) @map("created_at")
 
-  user      User     @relation(fields: [userId], references: [id])
+  user User @relation(fields: [userId], references: [id])
 
   @@map("wallets")
 }
 
 model Alert {
-  id          String   @id @default(uuid())
-  userId      String   @map("user_id")
-  type        String   // price_above, price_below
-  token       String
-  price       Decimal
-  isActive    Boolean  @default(true) @map("is_active")
-  createdAt   DateTime @default(now()) @map("created_at")
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  type      String // price_above, price_below
+  token     String
+  price     Decimal
+  isActive  Boolean  @default(true) @map("is_active")
+  createdAt DateTime @default(now()) @map("created_at")
 
-  user        User     @relation(fields: [userId], references: [id])
+  user User @relation(fields: [userId], references: [id])
 
   @@map("alerts")
 }
@@ -71,24 +81,24 @@ model PortfolioSnapshot {
   totalValueUsd Decimal  @map("total_value_usd")
   snapshotAt    DateTime @default(now()) @map("snapshot_at")
 
-  user          User     @relation(fields: [userId], references: [id])
+  user User @relation(fields: [userId], references: [id])
 
   @@map("portfolio_snapshots")
 }
 
 model Payment {
-  id              String   @id @default(uuid())
-  userId          String   @map("user_id")
-  txHash          String   @unique @map("tx_hash")
-  amount          Decimal
-  currency        String   @default("USDT")
-  network         String   @default("TRC20")
-  status          String   @default("pending") // pending, verified, failed
-  subscriptionMonths Int   @default(1) @map("subscription_months")
-  createdAt       DateTime @default(now()) @map("created_at")
-  verifiedAt      DateTime? @map("verified_at")
+  id                 String    @id @default(uuid())
+  userId             String    @map("user_id")
+  txHash             String    @unique @map("tx_hash")
+  amount             Decimal
+  currency           String    @default("USDT")
+  network            String    @default("TRC20")
+  status             String    @default("pending") // pending, verified, failed
+  subscriptionMonths Int       @default(1) @map("subscription_months")
+  createdAt          DateTime  @default(now()) @map("created_at")
+  verifiedAt         DateTime? @map("verified_at")
 
-  user            User @relation("UserPayments", fields: [userId], references: [id])
+  user User @relation("UserPayments", fields: [userId], references: [id])
 
   @@map("payments")
 }
@@ -99,17 +109,229 @@ enum TicketStatus {
 }
 
 model SupportTicket {
-  id        String   @id @default(uuid())
-  userId    String   @map("user_id")
+  id        String       @id @default(uuid())
+  userId    String       @map("user_id")
   name      String
   surname   String
   email     String
   message   String
   status    TicketStatus @default(OPEN)
+  createdAt DateTime     @default(now()) @map("created_at")
+  updatedAt DateTime     @updatedAt @map("updated_at")
+
+  user User @relation("UserSupportTickets", fields: [userId], references: [id])
+
+  @@map("support_tickets")
+}
+
+// === WHALE WATCH TABLES ===
+
+model WhaleTransaction {
+  id             String   @id @default(uuid())
+  hash           String   @unique
+  fromAddress    String   @map("from_address")
+  fromLabel      String?  @map("from_label")
+  toAddress      String   @map("to_address")
+  toLabel        String?  @map("to_label")
+  value          String
+  valueUsd       Decimal? @map("value_usd")
+  token          String
+  chain          String
+  timestamp      DateTime
+  blockNumber    Int      @map("block_number")
+  isToExchange   Boolean  @default(false) @map("is_to_exchange")
+  isFromExchange Boolean  @default(false) @map("is_from_exchange")
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  @@index([chain, timestamp])
+  @@index([fromLabel])
+  @@index([toLabel])
+  @@map("whale_transactions")
+}
+
+model WhaleAlert {
+  id            String   @id @default(uuid())
+  userId        String   @map("user_id")
+  walletAddress String   @map("wallet_address")
+  walletLabel   String?  @map("wallet_label")
+  chain         String
+  minAmount     Decimal  @map("min_amount")
+  active        Boolean  @default(true)
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  user User @relation("UserWhaleAlerts", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([walletAddress])
+  @@map("whale_alerts")
+}
+
+model TrackedWallet {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  address   String
+  label     String
+  chain     String
+  notes     String?
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user User @relation("UserTrackedWallets", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, address, chain])
+  @@index([userId])
+  @@map("tracked_wallets")
+}
+
+// === SENTIMENT ANALYSIS TABLES ===
+
+model SentimentData {
+  id        String   @id @default(uuid())
+  token     String
+  score     Decimal // -1 to 1
+  volume    Int // Number of mentions
+  source    String // "reddit", "telegram", "news"
+  timestamp DateTime
+  metadata  Json?
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([token, timestamp])
+  @@index([timestamp])
+  @@map("sentiment_data")
+}
+
+model SentimentAlert {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  token     String
+  condition String // "score_above", "score_below", "volume_spike"
+  threshold Decimal
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user User @relation("UserSentimentAlerts", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("sentiment_alerts")
+}
+
+// === PORTFOLIO & EXCHANGE TABLES ===
+
+model ExchangeConnection {
+  id        String    @id @default(uuid())
+  userId    String    @map("user_id")
+  exchange  String // "binance", "coinbase", "kraken"
+  apiKey    String    @map("api_key") // Encrypted
+  apiSecret String    @map("api_secret") // Encrypted
+  label     String?
+  active    Boolean   @default(true)
+  lastSync  DateTime? @map("last_sync")
+  createdAt DateTime  @default(now()) @map("created_at")
+
+  user User @relation("UserExchangeConnections", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("exchange_connections")
+}
+
+model DeFiPosition {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  protocol  String // "uniswap", "aave", "compound"
+  type      String // "liquidity", "lending", "staking"
+  chain     String
+  tokens    Json // Array of tokens
+  value     Decimal
+  apy       Decimal?
+  metadata  Json?
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  user      User @relation("UserSupportTickets", fields: [userId], references: [id])
+  user User @relation("UserDeFiPositions", fields: [userId], references: [id], onDelete: Cascade)
 
-  @@map("support_tickets")
+  @@index([userId])
+  @@map("defi_positions")
+}
+
+// === SECURITY & CONTRACT ANALYSIS ===
+
+model ContractAnalysis {
+  id                 String   @id @default(uuid())
+  address            String   @unique
+  chain              String
+  name               String?
+  symbol             String?
+  securityScore      Decimal  @map("security_score") // 0-100
+  isHoneypot         Boolean  @map("is_honeypot")
+  isRugPull          Boolean  @map("is_rugpull")
+  ownershipRenounced Boolean  @map("ownership_renounced")
+  liquidityLocked    Boolean  @map("liquidity_locked")
+  warnings           Json // Array of warnings
+  analyzedAt         DateTime @map("analyzed_at")
+  createdAt          DateTime @default(now()) @map("created_at")
+
+  @@index([chain, securityScore])
+  @@map("contract_analysis")
+}
+
+model TokenApproval {
+  id             String   @id @default(uuid())
+  userId         String   @map("user_id")
+  walletAddress  String   @map("wallet_address")
+  tokenAddress   String   @map("token_address")
+  spenderAddress String   @map("spender_address")
+  amount         String // "unlimited" or specific amount
+  chain          String
+  isRisky        Boolean  @default(false) @map("is_risky")
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  user User @relation("UserTokenApprovals", fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([walletAddress])
+  @@map("token_approvals")
+}
+
+// === COPY TRADING TABLES ===
+
+model CopyTradingConfig {
+  id                String   @id @default(uuid())
+  userId            String   @map("user_id")
+  followedWallet    String   @map("followed_wallet")
+  chain             String
+  maxAmountPerTrade Decimal  @map("max_amount_per_trade")
+  stopLossPercent   Decimal? @map("stop_loss_percent")
+  takeProfitPercent Decimal? @map("take_profit_percent")
+  active            Boolean  @default(true)
+  createdAt         DateTime @default(now()) @map("created_at")
+
+  user   User        @relation("UserCopyTradingConfigs", fields: [userId], references: [id], onDelete: Cascade)
+  trades CopyTrade[]
+
+  @@index([userId])
+  @@index([followedWallet])
+  @@map("copy_trading_configs")
+}
+
+model CopyTrade {
+  id          String    @id @default(uuid())
+  userId      String    @map("user_id")
+  configId    String    @map("config_id")
+  whaleWallet String    @map("whale_wallet")
+  whaleTxHash String    @map("whale_tx_hash")
+  userTxHash  String?   @map("user_tx_hash")
+  tokenIn     String    @map("token_in")
+  tokenOut    String    @map("token_out")
+  amountIn    Decimal   @map("amount_in")
+  amountOut   Decimal?  @map("amount_out")
+  status      String // "pending", "executed", "failed"
+  profit      Decimal?
+  createdAt   DateTime  @default(now()) @map("created_at")
+  executedAt  DateTime? @map("executed_at")
+
+  user   User              @relation("UserCopyTrades", fields: [userId], references: [id], onDelete: Cascade)
+  config CopyTradingConfig @relation(fields: [configId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([configId])
+  @@map("copy_trades")
 }

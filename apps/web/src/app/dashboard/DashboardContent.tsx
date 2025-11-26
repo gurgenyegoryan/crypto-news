@@ -5,6 +5,9 @@ import { useState, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { useRouter } from "next/navigation";
 import VerificationBanner from "@/components/VerificationBanner";
+import SentimentAnalysis from "@/components/SentimentAnalysis";
+import SecurityScanner from "@/components/SecurityScanner";
+import CopyTrading from "@/components/CopyTrading";
 
 export default function DashboardContent() {
     const [activeTab, setActiveTab] = useState("Portfolio");
@@ -819,6 +822,12 @@ export default function DashboardContent() {
                         </div>
                     </div>
                 );
+            case "Sentiment":
+                return <SentimentAnalysis />;
+            case "Security":
+                return <SecurityScanner />;
+            case "Copy Trading":
+                return <CopyTrading />;
             case "Support":
                 return (
                     <div className="space-y-6">
@@ -890,6 +899,9 @@ export default function DashboardContent() {
                         { name: "Alerts", icon: "🔔" },
                         { name: "Wallets", icon: "👛" },
                         { name: "Whale Watch", icon: "🐋" },
+                        { name: "Sentiment", icon: "🧠" },
+                        { name: "Security", icon: "🛡️" },
+                        { name: "Copy Trading", icon: "📋" },
                         { name: "Settings", icon: "⚙️" },
                         { name: "Support", icon: "🎫" },
                     ].map((item) => (

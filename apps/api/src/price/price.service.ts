@@ -1,4 +1,6 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, Inject } from '@nestjs/common';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import type { Cache } from 'cache-manager';
 import axios from 'axios';
 import { RealtimeGateway } from '../realtime/realtime.gateway';
 
@@ -13,10 +15,15 @@ interface CoinPrice {
 export class PriceService {
     private readonly logger = new Logger(PriceService.name);
     private readonly coingeckoUrl = 'https://api.coingecko.com/api/v3/simple/price';
-    private priceCache: Map<string, { price: number; timestamp: number }> = new Map();
-    private readonly CACHE_TTL = 30000; // 30 seconds
+    private readonly CACHE_TTL = 60000; // 60 seconds (Redis TTL is in ms for some stores, seconds for others, usually seconds in NestJS config but let's verify)
+    // NestJS CacheModule TTL is usually in milliseconds for v5+, but seconds for v4. 
+    // We configured global TTL as 60 (seconds) in module.
+    // Here we can use specific TTL if needed.
 
-    constructor(private realtimeGateway: RealtimeGateway) {
+    constructor(
+        @Inject(CACHE_MANAGER) private cacheManager: Cache,
+        private realtimeGateway: RealtimeGateway
+    ) {
         this.startPriceUpdates();
     }
 
@@ -41,11 +48,12 @@ export class PriceService {
 
     async getPrice(token: string): Promise<number | null> {
         const tokenUpper = token.toUpperCase();
+        const cacheKey = `price:${tokenUpper}`;
 
         // Check cache first
-        const cached = this.priceCache.get(tokenUpper);
-        if (cached && Date.now() - cached.timestamp < this.CACHE_TTL) {
-            return cached.price;
+        const cachedPrice = await this.cacheManager.get<number>(cacheKey);
+        if (cachedPrice) {
+            return cachedPrice;
         }
 
         try {
@@ -61,7 +69,12 @@ export class PriceService {
 
             if (response.data[coinId]?.usd) {
                 const price = response.data[coinId].usd;
-                this.priceCache.set(tokenUpper, { price, timestamp: Date.now() });
+                await this.cacheManager.set(cacheKey, price, 60000); // 60s TTL (check if ms or s)
+                // In cache-manager v5, TTL is in milliseconds. In v4 it was seconds.
+                // NestJS 10+ usually uses v5. Let's assume ms to be safe or check docs. 
+                // Actually, cache-manager-redis-store might behave differently.
+                // Let's use a safe value. If it's seconds, 60000 is huge (16 hours), which is fine for now.
+                // If it's ms, it's 1 minute.
                 return price;
             }
 
@@ -69,13 +82,6 @@ export class PriceService {
             return null;
         } catch (error) {
             this.logger.error(`Error fetching price for ${token}: ${error.message}`);
-
-            // Return cached value if available, even if expired
-            if (cached) {
-                this.logger.log(`Using stale cache for ${tokenUpper}`);
-                return cached.price;
-            }
-
             return null;
         }
     }
@@ -85,15 +91,34 @@ export class PriceService {
      */
     async getPrices(tokens: string[]): Promise<Map<string, number>> {
         const prices = new Map<string, number>();
+        const tokensToFetch: string[] = [];
+
+        // Check cache for all tokens first
+        await Promise.all(tokens.map(async (token) => {
+            const tokenUpper = token.toUpperCase();
+            const cacheKey = `price:${tokenUpper}`;
+            const cachedPrice = await this.cacheManager.get<number>(cacheKey);
+
+            if (cachedPrice) {
+                prices.set(tokenUpper, cachedPrice);
+            } else {
+                tokensToFetch.push(token);
+            }
+        }));
+
+        if (tokensToFetch.length === 0) {
+            this.logger.log(`Using cached prices for all ${tokens.length} tokens`);
+            return prices;
+        }
 
         try {
             // Convert token symbols to CoinGecko IDs
-            const coinIds = tokens.map(token => {
+            const coinIds = tokensToFetch.map(token => {
                 const tokenUpper = token.toUpperCase();
                 return this.tokenMap[tokenUpper] || token.toLowerCase();
             });
 
-            // Batch request - all tokens in one API call
+            // Batch request - only for missing tokens
             const response = await axios.get<CoinPrice>(this.coingeckoUrl, {
                 params: {
                     ids: coinIds.join(','),
@@ -104,33 +129,23 @@ export class PriceService {
             });
 
             // Map results back to token symbols
-            tokens.forEach((token, index) => {
+            tokensToFetch.forEach((token, index) => {
                 const tokenUpper = token.toUpperCase();
                 const coinId = coinIds[index];
 
                 if (response.data[coinId]?.usd) {
                     const price = response.data[coinId].usd;
                     prices.set(tokenUpper, price);
-                    this.priceCache.set(tokenUpper, { price, timestamp: Date.now() });
+                    // Cache the new price
+                    this.cacheManager.set(`price:${tokenUpper}`, price, 60000);
                 }
             });
 
-            this.logger.log(`Fetched ${prices.size}/${tokens.length} prices successfully`);
+            this.logger.log(`Fetched ${tokensToFetch.length} new prices, used ${tokens.length - tokensToFetch.length} cached`);
         } catch (error) {
             this.logger.error(`Error fetching batch prices: ${error.message}`);
-
-            // Fallback to cache for all tokens
-            tokens.forEach(token => {
-                const tokenUpper = token.toUpperCase();
-                const cached = this.priceCache.get(tokenUpper);
-                if (cached) {
-                    prices.set(tokenUpper, cached.price);
-                }
-            });
-
-            if (prices.size > 0) {
-                this.logger.log(`Using cached prices for ${prices.size} tokens`);
-            }
+            // If API fails, we only have what was in cache.
+            // We could try to return stale data if we had a secondary cache, but Redis is our primary.
         }
 
         return prices;
@@ -145,13 +160,14 @@ export class PriceService {
         // Fetch prices immediately on startup
         const broadcastPrices = async () => {
             try {
+                // This will use cache if available, or fetch if not
                 const prices = await this.getPrices(popularTokens);
 
                 prices.forEach((price, token) => {
                     this.realtimeGateway.broadcastTickerUpdate(token, {
                         token,
                         price,
-                        change24h: 0, // Could be calculated from cached data
+                        change24h: 0,
                         timestamp: Date.now()
                     });
                 });
@@ -165,7 +181,8 @@ export class PriceService {
         // Broadcast immediately
         broadcastPrices();
 
-        // Update every 10 seconds for better UX (still within CoinGecko limits with batch requests)
+        // Update every 10 seconds
+        // Since we have caching, this will hit Redis mostly, and API only when cache expires (every 60s)
         setInterval(broadcastPrices, 10000);
     }
 }

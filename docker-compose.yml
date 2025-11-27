@@ -40,6 +40,9 @@ services:
       context: ./apps/api
       dockerfile: Dockerfile
     container_name: cryptomonitor-api
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
     depends_on:
       postgres:
         condition: service_healthy
@@ -67,6 +70,9 @@ services:
       args:
         NEXT_PUBLIC_API_URL: http://localhost:3000
     container_name: cryptomonitor-web
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
     depends_on:
       - api
     environment:
@@ -84,6 +90,9 @@ services:
       context: ./apps/api # Reusing API build context as it shares logic
       dockerfile: Dockerfile.worker
     container_name: cryptomonitor-worker
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
     depends_on:
       postgres:
         condition: service_healthy

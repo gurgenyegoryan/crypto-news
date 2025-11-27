@@ -10,16 +10,23 @@ export const useRealtime = () => {
     useEffect(() => {
         const token = localStorage.getItem('auth_token');
 
+        // Don't attempt to connect if there is no token
+        if (!token) {
+            return;
+        }
+
         // Connect to the 'events' namespace
         socketRef.current = io(`${SOCKET_URL}/events`, {
             auth: {
-                token: token ? `Bearer ${token}` : undefined
+                token: `Bearer ${token}`
             },
             query: {
-                token: token || undefined
+                token: token
             },
             transports: ['websocket'],
             reconnection: true,
+            reconnectionAttempts: 5,
+            reconnectionDelay: 3000,
         });
 
         socketRef.current.on('connect', () => {
@@ -33,7 +40,13 @@ export const useRealtime = () => {
         });
 
         socketRef.current.on('connect_error', (err) => {
-            console.error('WebSocket connection error:', err);
+            // Suppress 403 errors to keep console clean, as they are expected when auth fails
+            if (err.message.includes('403') || (err as any).data?.code === 403) {
+                console.warn('WebSocket auth failed (403). This is expected if session expired.');
+            } else {
+                console.error('WebSocket connection error:', err.message);
+            }
+            setIsConnected(false);
         });
 
         return () => {

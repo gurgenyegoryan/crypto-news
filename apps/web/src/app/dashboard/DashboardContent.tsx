@@ -9,6 +9,7 @@ import SentimentAnalysis from "@/components/SentimentAnalysis";
 import SecurityScanner from "@/components/SecurityScanner";
 import CopyTrading from "@/components/CopyTrading";
 import { useRealtime } from "@/hooks/useRealtime";
+import RecentWins from "@/components/RecentWins";
 
 export default function DashboardContent() {
     const [activeTab, setActiveTab] = useState("Portfolio");
@@ -50,7 +51,7 @@ export default function DashboardContent() {
         }
     }, [isConnected, socket, user]);
 
-    if (!isAuthenticated) return null;
+    // if (!isAuthenticated) return null; // Removed to prevent hook mismatch
 
     // State for dynamic data
     const [alerts, setAlerts] = useState<{ id: string; token: string; price: string; active: boolean }[]>([]);
@@ -454,6 +455,8 @@ export default function DashboardContent() {
             setPasswordError(error.message || "Failed to change password");
         }
     };
+
+    if (!isAuthenticated) return null;
 
     const renderContent = () => {
         switch (activeTab) {
@@ -1128,6 +1131,7 @@ export default function DashboardContent() {
                     </button>
                 </header>
 
+                <RecentWins />
                 <VerificationBanner />
 
                 <div className="p-8 max-w-7xl mx-auto">

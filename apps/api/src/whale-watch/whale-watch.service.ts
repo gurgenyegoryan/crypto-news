@@ -1,6 +1,7 @@
 import { Injectable, OnModuleInit } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { BlockchainService, BlockchainTransaction } from '../blockchain/blockchain.service';
+import { RealtimeGateway } from '../realtime/realtime.gateway';
 
 export interface WhaleTransaction {
     hash: string;
@@ -26,6 +27,7 @@ export class WhaleWatchService implements OnModuleInit {
     constructor(
         private prisma: PrismaService,
         private blockchainService: BlockchainService,
+        private realtimeGateway: RealtimeGateway,
     ) { }
 
     async onModuleInit() {
@@ -108,7 +110,7 @@ export class WhaleWatchService implements OnModuleInit {
                     const valueUsd = parseFloat(tx.value) * ethPrice;
 
                     // Store in database
-                    await this.prisma.whaleTransaction.create({
+                    const savedTx = await this.prisma.whaleTransaction.create({
                         data: {
                             hash: tx.hash,
                             fromAddress: tx.from,
@@ -127,6 +129,22 @@ export class WhaleWatchService implements OnModuleInit {
                     });
 
                     console.log(`[WhaleWatch] Stored transaction: ${tx.hash.substring(0, 10)}... (${tx.value} ETH)`);
+
+                    // Broadcast event
+                    this.realtimeGateway.broadcastGlobal('whale-movement', {
+                        hash: savedTx.hash,
+                        from: savedTx.fromAddress,
+                        fromLabel: savedTx.fromLabel,
+                        to: savedTx.toAddress,
+                        toLabel: savedTx.toLabel,
+                        value: savedTx.value,
+                        valueUsd: savedTx.valueUsd,
+                        token: savedTx.token,
+                        timestamp: savedTx.timestamp.getTime(),
+                        chain: savedTx.chain,
+                        isToExchange: savedTx.isToExchange,
+                        isFromExchange: savedTx.isFromExchange,
+                    });
 
                     // Check if any users have alerts for this wallet
                     await this.checkAlerts(tx, fromInfo, toInfo);

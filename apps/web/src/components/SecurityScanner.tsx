@@ -138,17 +138,47 @@ export default function SecurityScanner() {
             {/* Analysis Results */}
             {analysis && (
                 <div className="space-y-4">
-                    {/* Security Score */}
-                    <div className="bg-gradient-to-br from-gray-800/80 to-gray-900/80 rounded-xl p-8 border border-gray-700">
-                        <div className="text-center">
-                            <p className="text-sm text-gray-400 mb-2">Security Score</p>
-                            <div className={`text-6xl font-bold ${getScoreColor(analysis.securityScore)}`}>
-                                {analysis.securityScore}
-                                <span className="text-2xl">/100</span>
+                    {/* Security Score with Risk Meter */}
+                    <div className="bg-gradient-to-br from-gray-800/80 to-gray-900/80 rounded-xl p-8 border border-gray-700 relative overflow-hidden">
+                        <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/10 rounded-full blur-3xl"></div>
+
+                        <div className="flex flex-col items-center justify-center relative z-10">
+                            <p className="text-sm text-gray-400 mb-4 font-medium uppercase tracking-wider">Security Score</p>
+
+                            {/* Gauge Visualization */}
+                            <div className="relative w-48 h-24 mb-4">
+                                {/* Background Arc */}
+                                <div className="absolute inset-0 rounded-t-full border-[16px] border-gray-700 border-b-0"></div>
+                                {/* Filled Arc - using rotation to simulate fill */}
+                                <div
+                                    className={`absolute inset-0 rounded-t-full border-[16px] border-b-0 transition-all duration-1000 ease-out origin-bottom ${analysis.securityScore >= 80 ? 'border-green-500' :
+                                            analysis.securityScore >= 60 ? 'border-yellow-500' :
+                                                analysis.securityScore >= 40 ? 'border-orange-500' : 'border-red-500'
+                                        }`}
+                                    style={{
+                                        transform: `rotate(${(analysis.securityScore / 100) * 180 - 180}deg)`,
+                                        opacity: 0.8
+                                    }}
+                                ></div>
+
+                                {/* Score Text */}
+                                <div className="absolute bottom-0 left-1/2 -translate-x-1/2 translate-y-1/2 text-center">
+                                    <div className={`text-5xl font-bold ${getScoreColor(analysis.securityScore)}`}>
+                                        {analysis.securityScore}
+                                    </div>
+                                </div>
                             </div>
-                            <p className={`text-xl font-semibold mt-2 ${getScoreColor(analysis.securityScore)}`}>
-                                {getScoreLabel(analysis.securityScore)}
-                            </p>
+
+                            <div className="mt-8 text-center">
+                                <p className={`text-xl font-bold ${getScoreColor(analysis.securityScore)}`}>
+                                    {getScoreLabel(analysis.securityScore)}
+                                </p>
+                                <p className="text-xs text-gray-500 mt-1">
+                                    {analysis.securityScore >= 80 ? 'Safe to trade' :
+                                        analysis.securityScore >= 60 ? 'Trade with caution' :
+                                            'High risk detected'}
+                                </p>
+                            </div>
                         </div>
                     </div>
 

@@ -51,8 +51,12 @@ ${emoji} <b>Price Alert Triggered!</b>
 <b>Token:</b> ${token.toUpperCase()}
 <b>Current Price:</b> $${currentPrice.toFixed(2)}
 <b>Target Price:</b> $${targetPrice.toFixed(2)}
+<b>Movement:</b> ${direction.toUpperCase()} target
 
-Your ${token.toUpperCase()} price alert has been triggered! The price is now ${direction} your target.
+<a href="https://dexscreener.com/search?q=${token}">📊 View on DexScreener</a>
+<a href="https://www.coingecko.com/en/search?q=${token}">🦎 View on CoinGecko</a>
+
+<i>Time to act!</i> ⚡
         `.trim();
 
         return this.sendMessage(chatId, message);

@@ -265,6 +265,10 @@ model ContractAnalysis {
   isRugPull          Boolean  @map("is_rugpull")
   ownershipRenounced Boolean  @map("ownership_renounced")
   liquidityLocked    Boolean  @map("liquidity_locked")
+  buyTax             Decimal  @default(0) @map("buy_tax")
+  sellTax            Decimal  @default(0) @map("sell_tax")
+  isMintable         Boolean  @default(false) @map("is_mintable")
+  isProxy            Boolean  @default(false) @map("is_proxy")
   warnings           Json // Array of warnings
   analyzedAt         DateTime @map("analyzed_at")
   createdAt          DateTime @default(now()) @map("created_at")

@@ -8,11 +8,13 @@ import VerificationBanner from "@/components/VerificationBanner";
 import SentimentAnalysis from "@/components/SentimentAnalysis";
 import SecurityScanner from "@/components/SecurityScanner";
 import CopyTrading from "@/components/CopyTrading";
+import { useRealtime } from "@/hooks/useRealtime";
 
 export default function DashboardContent() {
     const [activeTab, setActiveTab] = useState("Portfolio");
     const { user, isAuthenticated, updateProfile } = useAuth();
     const router = useRouter();
+    const { socket, isConnected } = useRealtime();
     const [showModal, setShowModal] = useState<"alert" | "wallet" | "payment" | null>(null);
     const [saveSuccess, setSaveSuccess] = useState(false);
     const [showUpgradePrompt, setShowUpgradePrompt] = useState(false);
@@ -23,6 +25,30 @@ export default function DashboardContent() {
             router.push("/login");
         }
     }, [isAuthenticated, router]);
+
+    // Real-time updates
+    useEffect(() => {
+        if (isConnected && socket && user) {
+            // Listen for portfolio updates
+            socket.on('portfolioUpdate', (data) => {
+                // Update local state if we had a full portfolio state
+                // For now, we'll just trigger a re-fetch or show a notification
+                setNotification({ type: 'success', message: 'Portfolio updated!' });
+                fetchWallets(); // Re-fetch wallets to get new balances
+            });
+
+            socket.on('walletTransaction', (data) => {
+                setNotification({ type: 'success', message: `New transaction detected for ${data.address}` });
+                fetchWallets();
+                fetchWhaleTransactions(); // Might be relevant
+            });
+
+            return () => {
+                socket.off('portfolioUpdate');
+                socket.off('walletTransaction');
+            };
+        }
+    }, [isConnected, socket, user]);
 
     if (!isAuthenticated) return null;
 

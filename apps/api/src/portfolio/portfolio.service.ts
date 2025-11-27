@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { PriceService } from '../price/price.service';
 import { BlockchainService } from '../blockchain/blockchain.service';
+import { RealtimeGateway } from '../realtime/realtime.gateway';
 
 export interface PortfolioAsset {
     token: string;
@@ -16,6 +17,7 @@ export interface PortfolioSummary {
     assets: PortfolioAsset[];
     performance24h?: number;
     performance7d?: number;
+    performance30d?: number;
 }
 
 @Injectable()
@@ -23,7 +25,8 @@ export class PortfolioService {
     constructor(
         private prisma: PrismaService,
         private priceService: PriceService,
-        private blockchainService: BlockchainService, // Added to constructor
+        private blockchainService: BlockchainService,
+        private realtimeGateway: RealtimeGateway,
     ) { }
 
     /**
@@ -103,11 +106,13 @@ export class PortfolioService {
         // Calculate performance metrics
         let performance24h = 0;
         let performance7d = 0;
+        let performance30d = 0;
 
         try {
             const performance = await this.getPerformance(userId);
             performance24h = performance.change24h;
             performance7d = performance.change7d;
+            performance30d = performance.change30d;
         } catch (error) {
             console.error('Error calculating performance:', error);
         }
@@ -117,6 +122,7 @@ export class PortfolioService {
             assets,
             performance24h,
             performance7d,
+            performance30d,
         };
     }
 
@@ -194,5 +200,17 @@ export class PortfolioService {
             : 0;
 
         return { change24h, change7d, change30d };
+    }
+
+    /**
+     * Broadcast portfolio update to user
+     */
+    async broadcastPortfolioUpdate(userId: string) {
+        try {
+            const portfolio = await this.getUserPortfolio(userId);
+            this.realtimeGateway.sendUserUpdate(userId, 'portfolioUpdate', portfolio);
+        } catch (error) {
+            console.error(`Error broadcasting portfolio for user ${userId}:`, error);
+        }
     }
 }

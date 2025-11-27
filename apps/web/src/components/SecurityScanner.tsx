@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { Shield, AlertTriangle, CheckCircle, XCircle, Search } from 'lucide-react';
+import React, { useState } from 'react';
+import { Shield, AlertTriangle, CheckCircle, XCircle, Search, Lock, Unlock, FileCode, Percent } from 'lucide-react';
 
 interface SecurityAnalysis {
     securityScore: number;
@@ -7,6 +7,10 @@ interface SecurityAnalysis {
     isRugPull: boolean;
     ownershipRenounced: boolean;
     liquidityLocked: boolean;
+    buyTax: number;
+    sellTax: number;
+    isMintable: boolean;
+    isProxy: boolean;
     warnings: string[];
 }
 
@@ -29,7 +33,7 @@ export default function SecurityScanner() {
 
         try {
             const token = localStorage.getItem('auth_token');
-            const response = await fetch('http://localhost:3000/security/analyze', {
+            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'}/security/analyze`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -100,6 +104,8 @@ export default function SecurityScanner() {
                             <option value="ethereum">Ethereum</option>
                             <option value="bsc">Binance Smart Chain</option>
                             <option value="polygon">Polygon</option>
+                            <option value="arbitrum">Arbitrum</option>
+                            <option value="avalanche">Avalanche</option>
                         </select>
                     </div>
 
@@ -146,8 +152,9 @@ export default function SecurityScanner() {
                         </div>
                     </div>
 
-                    {/* Security Checks */}
-                    <div className="grid grid-cols-2 gap-4">
+                    {/* Security Checks Grid */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {/* Honeypot Status */}
                         <div className={`rounded-xl p-6 border ${analysis.isHoneypot
                             ? 'bg-red-900/20 border-red-500/30'
                             : 'bg-green-900/20 border-green-500/30'
@@ -159,33 +166,15 @@ export default function SecurityScanner() {
                                     <CheckCircle className="w-6 h-6 text-green-500" />
                                 )}
                                 <div>
-                                    <p className="font-semibold text-white">Honeypot Check</p>
+                                    <p className="font-semibold text-white">Honeypot Status</p>
                                     <p className={`text-sm ${analysis.isHoneypot ? 'text-red-400' : 'text-green-400'}`}>
-                                        {analysis.isHoneypot ? 'Possible Honeypot!' : 'Not a Honeypot'}
+                                        {analysis.isHoneypot ? 'Confirmed Honeypot!' : 'Not a Honeypot'}
                                     </p>
                                 </div>
                             </div>
                         </div>
 
-                        <div className={`rounded-xl p-6 border ${analysis.isRugPull
-                            ? 'bg-red-900/20 border-red-500/30'
-                            : 'bg-green-900/20 border-green-500/30'
-                            }`}>
-                            <div className="flex items-center gap-3">
-                                {analysis.isRugPull ? (
-                                    <XCircle className="w-6 h-6 text-red-500" />
-                                ) : (
-                                    <CheckCircle className="w-6 h-6 text-green-500" />
-                                )}
-                                <div>
-                                    <p className="font-semibold text-white">Rug Pull Risk</p>
-                                    <p className={`text-sm ${analysis.isRugPull ? 'text-red-400' : 'text-green-400'}`}>
-                                        {analysis.isRugPull ? 'High Risk!' : 'Low Risk'}
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
-
+                        {/* Ownership */}
                         <div className={`rounded-xl p-6 border ${analysis.ownershipRenounced
                             ? 'bg-green-900/20 border-green-500/30'
                             : 'bg-yellow-900/20 border-yellow-500/30'
@@ -205,20 +194,36 @@ export default function SecurityScanner() {
                             </div>
                         </div>
 
-                        <div className={`rounded-xl p-6 border ${analysis.liquidityLocked
-                            ? 'bg-green-900/20 border-green-500/30'
-                            : 'bg-yellow-900/20 border-yellow-500/30'
+                        {/* Taxes */}
+                        <div className="rounded-xl p-6 border bg-gray-800/50 border-gray-700">
+                            <div className="flex items-center gap-3">
+                                <Percent className="w-6 h-6 text-blue-500" />
+                                <div>
+                                    <p className="font-semibold text-white">Taxes</p>
+                                    <p className="text-sm text-gray-400">
+                                        Buy: <span className={analysis.buyTax > 10 ? 'text-red-400' : 'text-green-400'}>{analysis.buyTax.toFixed(1)}%</span>
+                                        {' / '}
+                                        Sell: <span className={analysis.sellTax > 10 ? 'text-red-400' : 'text-green-400'}>{analysis.sellTax.toFixed(1)}%</span>
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Mintable */}
+                        <div className={`rounded-xl p-6 border ${analysis.isMintable
+                            ? 'bg-yellow-900/20 border-yellow-500/30'
+                            : 'bg-green-900/20 border-green-500/30'
                             }`}>
                             <div className="flex items-center gap-3">
-                                {analysis.liquidityLocked ? (
-                                    <CheckCircle className="w-6 h-6 text-green-500" />
-                                ) : (
+                                {analysis.isMintable ? (
                                     <AlertTriangle className="w-6 h-6 text-yellow-500" />
+                                ) : (
+                                    <CheckCircle className="w-6 h-6 text-green-500" />
                                 )}
                                 <div>
-                                    <p className="font-semibold text-white">Liquidity</p>
-                                    <p className={`text-sm ${analysis.liquidityLocked ? 'text-green-400' : 'text-yellow-400'}`}>
-                                        {analysis.liquidityLocked ? 'Locked' : 'Not Locked'}
+                                    <p className="font-semibold text-white">Mintable</p>
+                                    <p className={`text-sm ${analysis.isMintable ? 'text-yellow-400' : 'text-green-400'}`}>
+                                        {analysis.isMintable ? 'Yes (Risk)' : 'No'}
                                     </p>
                                 </div>
                             </div>

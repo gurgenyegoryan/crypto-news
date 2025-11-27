@@ -1,17 +1,24 @@
-import { Injectable } from '@nestjs/common';
-import { createPublicClient, http, PublicClient, formatEther, getContract } from 'viem';
-import { mainnet } from 'viem/chains';
+import { Injectable, Logger } from '@nestjs/common';
+import { createPublicClient, http, formatEther, parseEther, PublicClient, getContract } from 'viem';
+import { mainnet, bsc, polygon } from 'viem/chains';
 import axios from 'axios';
+import { RealtimeGateway } from '../realtime/realtime.gateway';
+import { PriceService } from '../price/price.service';
+
+export interface BlockchainBalance {
+    chain: string;
+    balance: string;
+    balanceUsd: number;
+}
 
 export interface BlockchainTransaction {
     hash: string;
     from: string;
     to: string;
     value: string;
-    valueUsd?: number;
-    token: string;
     timestamp: number;
     blockNumber: number;
+    token: string;
     chain: string;
 }
 
@@ -23,10 +30,14 @@ interface KnownWallet {
 
 @Injectable()
 export class BlockchainService {
+    private readonly logger = new Logger(BlockchainService.name);
     private ethClient: PublicClient;
     private knownWallets: Map<string, KnownWallet>;
 
-    constructor() {
+    constructor(
+        private realtimeGateway: RealtimeGateway,
+        private priceService: PriceService,
+    ) {
         // Using free public RPC (rate limited but sufficient for demo)
         this.ethClient = createPublicClient({
             chain: mainnet,
@@ -187,22 +198,11 @@ export class BlockchainService {
     }
 
     /**
-     * Get current ETH price from CoinGecko (free API)
+     * Get current ETH price using centralized PriceService
      */
     async getEthPrice(): Promise<number> {
-        try {
-            const response = await axios.get('https://api.coingecko.com/api/v3/simple/price', {
-                params: {
-                    ids: 'ethereum',
-                    vs_currencies: 'usd',
-                },
-            });
-
-            return response.data.ethereum.usd;
-        } catch (error) {
-            console.error('Error fetching ETH price:', error);
-            return 0;
-        }
+        const price = await this.priceService.getPrice('ETH');
+        return price || 0;
     }
 
     /**
@@ -331,13 +331,28 @@ export class BlockchainService {
     /**
      * Monitor a specific wallet for new transactions
      */
-    async monitorWallet(address: string, callback: (tx: BlockchainTransaction) => void): Promise<void> {
+    /**
+     * Monitor a specific wallet for new transactions
+     */
+    async monitorWallet(address: string, userId: string): Promise<void> {
         // This would use WebSocket in production
         // For now, we'll poll every 15 seconds
+        // Store interval ID to clear later if needed (not implemented here for simplicity)
         setInterval(async () => {
-            const transactions = await this.getAddressTransactions(address);
-            if (transactions.length > 0) {
-                callback(transactions[0]); // Most recent transaction
+            try {
+                const transactions = await this.getAddressTransactions(address);
+                if (transactions.length > 0) {
+                    const latestTx = transactions[0];
+                    // Check if this is a new transaction (in production, we'd track last processed block)
+                    // For now, we just emit the latest one as an example
+
+                    this.realtimeGateway.sendUserUpdate(userId, 'walletTransaction', {
+                        address,
+                        transaction: latestTx
+                    });
+                }
+            } catch (error) {
+                console.error(`Error monitoring wallet ${address}:`, error);
             }
         }, 15000);
     }

@@ -21,6 +21,7 @@ import { SentimentModule } from './sentiment/sentiment.module';
 import { PortfolioModule } from './portfolio/portfolio.module';
 import { SecurityModule } from './security/security.module';
 import { CopyTradingModule } from './copy-trading/copy-trading.module';
+import { RealtimeModule } from './realtime/realtime.module';
 
 @Module({
   imports: [
@@ -43,6 +44,7 @@ import { CopyTradingModule } from './copy-trading/copy-trading.module';
     PortfolioModule,
     SecurityModule,
     CopyTradingModule,
+    RealtimeModule,
   ],
   controllers: [AppController],
   providers: [AppService],

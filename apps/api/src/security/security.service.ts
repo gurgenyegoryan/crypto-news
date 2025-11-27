@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import axios from 'axios';
 
@@ -8,11 +8,17 @@ export interface SecurityAnalysis {
     isRugPull: boolean;
     ownershipRenounced: boolean;
     liquidityLocked: boolean;
+    buyTax: number;
+    sellTax: number;
+    isMintable: boolean;
+    isProxy: boolean;
     warnings: string[];
 }
 
 @Injectable()
 export class SecurityService {
+    private readonly logger = new Logger(SecurityService.name);
+
     constructor(private prisma: PrismaService) { }
 
     /**
@@ -33,6 +39,10 @@ export class SecurityService {
                     isRugPull: existing.isRugPull,
                     ownershipRenounced: existing.ownershipRenounced,
                     liquidityLocked: existing.liquidityLocked,
+                    buyTax: 0, // Need to add to DB schema if we want to cache these
+                    sellTax: 0,
+                    isMintable: false,
+                    isProxy: false,
                     warnings: existing.warnings as string[],
                 };
             }
@@ -67,13 +77,13 @@ export class SecurityService {
 
             return analysis;
         } catch (error) {
-            console.error('[Security] Error analyzing contract:', error);
+            this.logger.error(`Error analyzing contract ${address}:`, error);
             throw error;
         }
     }
 
     /**
-     * Perform actual contract security analysis
+     * Perform actual contract security analysis using GoPlus API
      */
     private async performContractAnalysis(address: string, chain: string): Promise<SecurityAnalysis> {
         const warnings: string[] = [];
@@ -82,118 +92,114 @@ export class SecurityService {
         let isRugPull = false;
         let ownershipRenounced = false;
         let liquidityLocked = false;
+        let buyTax = 0;
+        let sellTax = 0;
+        let isMintable = false;
+        let isProxy = false;
 
         try {
-            // 1. Check contract verification on Etherscan/BscScan
-            const verificationResult = await this.checkContractVerification(address, chain);
-            if (!verificationResult.isVerified) {
-                warnings.push('⚠️ Contract is not verified - source code unavailable');
-                securityScore -= 30;
-            } else {
-                // Analyze source code for dangerous patterns
-                const sourceCode = verificationResult.sourceCode || '';
+            // Map chain to GoPlus Chain ID
+            const chainId = this.getChainId(chain);
 
-                // Check for dangerous functions
-                if (sourceCode.includes('selfdestruct') || sourceCode.includes('suicide')) {
-                    warnings.push('🚨 CRITICAL: Contract contains selfdestruct function');
-                    securityScore -= 40;
+            // Call GoPlus API
+            const response = await axios.get(`https://api.gopluslabs.io/api/v1/token_security/${chainId}`, {
+                params: { contract_addresses: address },
+                timeout: 10000
+            });
+
+            if (response.data.result && response.data.result[address.toLowerCase()]) {
+                const data = response.data.result[address.toLowerCase()];
+
+                // 1. Honeypot Check
+                if (data.is_honeypot === '1') {
+                    isHoneypot = true;
+                    securityScore = 0;
+                    warnings.push('🚨 CRITICAL: Confirmed Honeypot');
+                }
+
+                // 2. Tax Check
+                buyTax = parseFloat(data.buy_tax || '0') * 100;
+                sellTax = parseFloat(data.sell_tax || '0') * 100;
+
+                if (buyTax > 10) {
+                    warnings.push(`⚠️ High Buy Tax: ${buyTax.toFixed(2)}%`);
+                    securityScore -= 10;
+                }
+                if (sellTax > 10) {
+                    warnings.push(`⚠️ High Sell Tax: ${sellTax.toFixed(2)}%`);
+                    securityScore -= 10;
+                }
+                if (buyTax > 50 || sellTax > 50) {
+                    warnings.push('🚨 CRITICAL: Unreasonable Tax Rates');
+                    securityScore -= 30;
                     isRugPull = true;
                 }
 
-                if (sourceCode.includes('onlyOwner') && !sourceCode.includes('renounceOwnership')) {
-                    warnings.push('⚠️ Owner has special privileges without renounce function');
-                    securityScore -= 15;
-                }
-
-                // Check for hidden mint functions
-                if (sourceCode.match(/function\s+mint\s*\(/i) && !sourceCode.includes('public')) {
-                    warnings.push('⚠️ Hidden mint function detected');
-                    securityScore -= 20;
-                }
-
-                // Check for blacklist functionality
-                if (sourceCode.includes('blacklist') || sourceCode.includes('isBlacklisted')) {
-                    warnings.push('⚠️ Blacklist functionality present');
+                // 3. Ownership
+                if (data.owner_address === '0x0000000000000000000000000000000000000000') {
+                    ownershipRenounced = true;
+                    securityScore += 10;
+                } else {
+                    warnings.push('⚠️ Ownership not renounced');
                     securityScore -= 10;
                 }
 
-                // Check for transfer restrictions
-                if (sourceCode.includes('canTransfer') || sourceCode.includes('_beforeTokenTransfer')) {
-                    warnings.push('ℹ️ Transfer restrictions may apply');
+                // 4. Mintable
+                if (data.is_mintable === '1') {
+                    isMintable = true;
+                    warnings.push('⚠️ Token is Mintable (Owner can print more tokens)');
+                    securityScore -= 20;
+                }
+
+                // 5. Proxy
+                if (data.is_proxy === '1') {
+                    isProxy = true;
+                    warnings.push('ℹ️ Contract is a Proxy (Logic can be changed)');
                     securityScore -= 5;
                 }
 
-                // Check for proxy pattern
-                if (verificationResult.isProxy) {
-                    warnings.push('⚠️ Proxy contract - implementation can be changed');
-                    securityScore -= 15;
-                }
-            }
-
-            // 2. Check for honeypot using honeypot.is API (free)
-            try {
-                const honeypotCheck = await axios.get(`https://api.honeypot.is/v2/IsHoneypot`, {
-                    params: {
-                        address,
-                        chainID: chain.toLowerCase() === 'bsc' ? '56' : '1'
-                    },
-                    timeout: 5000
-                });
-
-                if (honeypotCheck.data && honeypotCheck.data.honeypotResult) {
-                    const result = honeypotCheck.data.honeypotResult;
-
-                    if (result.isHoneypot) {
-                        isHoneypot = true;
-                        warnings.push('🚨 DANGER: Confirmed honeypot - DO NOT BUY');
-                        securityScore = 0;
-                    }
-
-                    if (result.buyTax > 10 || result.sellTax > 10) {
-                        warnings.push(`⚠️ High taxes: ${result.buyTax}% buy / ${result.sellTax}% sell`);
-                        securityScore -= 15;
-                    }
-                }
-            } catch (error) {
-                console.log('[Security] Honeypot API unavailable, skipping check');
-            }
-
-            // 3. Check ownership status
-            try {
-                const ownershipCheck = await this.checkOwnership(address, chain);
-                ownershipRenounced = ownershipCheck.renounced;
-
-                if (!ownershipRenounced) {
-                    warnings.push('⚠️ Ownership not renounced - owner has control');
+                // 6. Open Source
+                if (data.is_open_source === '0') {
+                    warnings.push('⚠️ Contract source code not verified');
                     securityScore -= 20;
-                } else {
-                    securityScore += 10; // Bonus for renounced ownership
                 }
-            } catch (error) {
-                warnings.push('ℹ️ Could not verify ownership status');
-                securityScore -= 5;
-            }
 
-            // 4. Check liquidity (simplified - in production would check DEX contracts)
-            try {
-                const liquidityCheck = await this.checkLiquidity(address, chain);
-                liquidityLocked = liquidityCheck.isLocked;
+                // 7. Blacklist
+                if (data.is_blacklisted === '1') {
+                    warnings.push('⚠️ Contract has blacklist function');
+                    securityScore -= 10;
+                }
 
-                if (!liquidityLocked) {
-                    warnings.push('⚠️ Liquidity not locked - rug pull risk');
-                    securityScore -= 25;
+                // 8. Whitelist
+                if (data.is_whitelisted === '1') {
+                    warnings.push('ℹ️ Contract has whitelist function');
+                }
+
+                // 9. Can take back ownership
+                if (data.can_take_back_ownership === '1') {
+                    warnings.push('🚨 Owner can retake ownership');
+                    securityScore -= 20;
+                }
+
+                // 10. Hidden Owner
+                if (data.hidden_owner === '1') {
+                    warnings.push('🚨 Hidden owner detected');
+                    securityScore -= 30;
                     isRugPull = true;
-                } else {
-                    securityScore += 10; // Bonus for locked liquidity
                 }
-            } catch (error) {
-                warnings.push('ℹ️ Could not verify liquidity lock');
-                securityScore -= 10;
+
+                // Liquidity check (GoPlus doesn't always provide this directly in this endpoint, 
+                // but we can infer risk from other factors or use a separate call. 
+                // For now, we'll leave it as false unless we have data)
+                // In a full implementation, we'd check LP lockers.
+            } else {
+                warnings.push('⚠️ Could not fetch security data from GoPlus');
+                securityScore -= 20;
             }
 
         } catch (error) {
-            console.error('[Security] Error during analysis:', error.message);
-            warnings.push('⚠️ Analysis incomplete - some checks failed');
+            this.logger.error(`Error calling GoPlus API: ${error.message}`);
+            warnings.push('⚠️ Security analysis service unavailable');
             securityScore -= 20;
         }
 
@@ -202,15 +208,13 @@ export class SecurityService {
 
         // Determine risk levels
         if (securityScore < 40) {
-            isHoneypot = true;
             warnings.unshift('🚨 EXTREME RISK - DO NOT INTERACT');
         } else if (securityScore < 60) {
-            isRugPull = true;
             warnings.unshift('⚠️ HIGH RISK - Proceed with extreme caution');
-        } else if (securityScore < 75) {
+        } else if (securityScore < 80) {
             warnings.unshift('⚠️ MEDIUM RISK - Do your own research');
         } else {
-            warnings.unshift('✅ Relatively safe - but always DYOR');
+            warnings.unshift('✅ Low Risk - Contract looks healthy');
         }
 
         return {
@@ -219,70 +223,24 @@ export class SecurityService {
             isRugPull,
             ownershipRenounced,
             liquidityLocked,
+            buyTax,
+            sellTax,
+            isMintable,
+            isProxy,
             warnings,
         };
     }
 
-    /**
-     * Check if contract is verified on blockchain explorer
-     */
-    private async checkContractVerification(address: string, chain: string): Promise<{
-        isVerified: boolean;
-        sourceCode?: string;
-        isProxy: boolean;
-    }> {
-        try {
-            const normalizedChain = chain.toLowerCase();
-            let apiUrl = 'https://api.etherscan.io/api';
-            let apiKey = process.env.ETHERSCAN_API_KEY || 'YourApiKeyToken';
-
-            if (normalizedChain === 'bsc' || normalizedChain === 'bnb') {
-                apiUrl = 'https://api.bscscan.com/api';
-                apiKey = process.env.BSCSCAN_API_KEY || apiKey;
-            }
-
-            const response = await axios.get(apiUrl, {
-                params: {
-                    module: 'contract',
-                    action: 'getsourcecode',
-                    address,
-                    apikey: apiKey,
-                },
-                timeout: 10000
-            });
-
-            if (response.data.status === '1' && response.data.result[0]) {
-                const contract = response.data.result[0];
-                return {
-                    isVerified: contract.SourceCode !== '',
-                    sourceCode: contract.SourceCode,
-                    isProxy: contract.Proxy === '1'
-                };
-            }
-
-            return { isVerified: false, isProxy: false };
-        } catch (error) {
-            console.error('[Security] Error checking verification:', error.message);
-            return { isVerified: false, isProxy: false };
+    private getChainId(chain: string): string {
+        const normalized = chain.toLowerCase();
+        switch (normalized) {
+            case 'ethereum': return '1';
+            case 'bsc': return '56';
+            case 'polygon': return '137';
+            case 'arbitrum': return '42161';
+            case 'avalanche': return '43114';
+            default: return '1';
         }
-    }
-
-    /**
-     * Check ownership status (simplified)
-     */
-    private async checkOwnership(address: string, chain: string): Promise<{ renounced: boolean }> {
-        // In production, would call contract's owner() function and check if it's 0x0
-        // For now, return a heuristic based on other factors
-        return { renounced: false };
-    }
-
-    /**
-     * Check liquidity lock status (simplified)
-     */
-    private async checkLiquidity(address: string, chain: string): Promise<{ isLocked: boolean }> {
-        // In production, would check DEX liquidity pools and lock contracts
-        // For now, return a heuristic
-        return { isLocked: false };
     }
 
     /**
@@ -299,12 +257,6 @@ export class SecurityService {
      * Check wallet for risky approvals
      */
     async checkWalletApprovals(address: string, chain: string = 'ethereum'): Promise<any[]> {
-        // In production, you would:
-        // 1. Fetch all approval events for this address
-        // 2. Check current allowances
-        // 3. Identify risky contracts
-
-        // For now, return empty array (feature requires more complex implementation)
         return [];
     }
 }

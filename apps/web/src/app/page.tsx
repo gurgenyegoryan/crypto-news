@@ -1,4 +1,5 @@
 import Link from "next/link";
+import LivePriceTicker from "@/components/LivePriceTicker";
 
 export default function Home() {
   return (
@@ -19,6 +20,11 @@ export default function Home() {
           </div>
         </div>
       </nav>
+
+      {/* Live Ticker */}
+      <div className="pt-16">
+        <LivePriceTicker />
+      </div>
 
       {/* Hero Section */}
       <section className="relative pt-32 pb-20 overflow-hidden">
@@ -52,10 +58,10 @@ export default function Home() {
             </div>
           </div>
         </div>
-      </section>
+      </section >
 
       {/* Features Grid */}
-      <section id="features" className="py-24 bg-black/50">
+      < section id="features" className="py-24 bg-black/50" >
         <div className="container mx-auto px-6">
           <h2 className="text-3xl md:text-4xl font-bold text-center mb-4">
             Everything you need to <span className="text-purple-400">stay ahead</span>
@@ -113,10 +119,10 @@ export default function Home() {
             ))}
           </div>
         </div>
-      </section>
+      </section >
 
       {/* Pricing Section */}
-      <section id="pricing" className="py-24">
+      < section id="pricing" className="py-24" >
         <div className="container mx-auto px-6">
           <h2 className="text-3xl md:text-4xl font-bold text-center mb-16">Simple Pricing</h2>
           <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
@@ -172,10 +178,10 @@ export default function Home() {
             ))}
           </div>
         </div>
-      </section>
+      </section >
 
       {/* FAQ Section */}
-      <section className="py-24 bg-black/30">
+      < section className="py-24 bg-black/30" >
         <div className="container mx-auto px-6">
           <div className="max-w-3xl mx-auto">
             <h2 className="text-3xl md:text-4xl font-bold text-center mb-16">
@@ -244,10 +250,10 @@ export default function Home() {
             </div>
           </div>
         </div>
-      </section>
+      </section >
 
       {/* Final CTA */}
-      <section className="py-24 relative overflow-hidden">
+      < section className="py-24 relative overflow-hidden" >
         <div className="absolute inset-0 bg-gradient-to-r from-purple-900/20 via-pink-900/20 to-purple-900/20" />
         <div className="container mx-auto px-6 relative z-10">
           <div className="max-w-3xl mx-auto text-center">
@@ -265,10 +271,10 @@ export default function Home() {
             </p>
           </div>
         </div>
-      </section>
+      </section >
 
       {/* Footer */}
-      <footer className="border-t border-white/10 py-12 bg-black/50">
+      < footer className="border-t border-white/10 py-12 bg-black/50" >
         <div className="container mx-auto px-6">
           <div className="flex flex-col md:flex-row items-center justify-between gap-6">
             <div className="text-xl font-bold bg-gradient-to-r from-purple-400 to-pink-600 bg-clip-text text-transparent">
@@ -284,7 +290,7 @@ export default function Home() {
             </div>
           </div>
         </div>
-      </footer>
-    </div>
+      </footer >
+    </div >
   );
 }

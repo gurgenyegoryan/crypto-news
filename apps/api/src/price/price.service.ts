@@ -15,10 +15,7 @@ interface CoinPrice {
 export class PriceService {
     private readonly logger = new Logger(PriceService.name);
     private readonly coingeckoUrl = 'https://api.coingecko.com/api/v3/simple/price';
-    private readonly CACHE_TTL = 60000; // 60 seconds (Redis TTL is in ms for some stores, seconds for others, usually seconds in NestJS config but let's verify)
-    // NestJS CacheModule TTL is usually in milliseconds for v5+, but seconds for v4. 
-    // We configured global TTL as 60 (seconds) in module.
-    // Here we can use specific TTL if needed.
+    private readonly CACHE_TTL = 60000; // 60 seconds
 
     constructor(
         @Inject(CACHE_MANAGER) private cacheManager: Cache,
@@ -51,9 +48,9 @@ export class PriceService {
         const cacheKey = `price:${tokenUpper}`;
 
         // Check cache first
-        const cachedPrice = await this.cacheManager.get<number>(cacheKey);
-        if (cachedPrice) {
-            return cachedPrice;
+        const cachedData = await this.cacheManager.get<{ price: number; change24h: number }>(cacheKey);
+        if (cachedData) {
+            return cachedData.price;
         }
 
         try {
@@ -63,18 +60,16 @@ export class PriceService {
                 params: {
                     ids: coinId,
                     vs_currencies: 'usd',
+                    include_24hr_change: 'true',
                 },
                 timeout: 5000,
             });
 
             if (response.data[coinId]?.usd) {
                 const price = response.data[coinId].usd;
-                await this.cacheManager.set(cacheKey, price, 60000); // 60s TTL (check if ms or s)
-                // In cache-manager v5, TTL is in milliseconds. In v4 it was seconds.
-                // NestJS 10+ usually uses v5. Let's assume ms to be safe or check docs. 
-                // Actually, cache-manager-redis-store might behave differently.
-                // Let's use a safe value. If it's seconds, 60000 is huge (16 hours), which is fine for now.
-                // If it's ms, it's 1 minute.
+                const change24h = response.data[coinId].usd_24h_change || 0;
+
+                await this.cacheManager.set(cacheKey, { price, change24h }, 60000);
                 return price;
             }
 
@@ -89,18 +84,18 @@ export class PriceService {
     /**
      * Fetch prices for multiple tokens in a single API call (more efficient)
      */
-    async getPrices(tokens: string[]): Promise<Map<string, number>> {
-        const prices = new Map<string, number>();
+    async getPrices(tokens: string[]): Promise<Map<string, { price: number; change24h: number }>> {
+        const prices = new Map<string, { price: number; change24h: number }>();
         const tokensToFetch: string[] = [];
 
         // Check cache for all tokens first
         await Promise.all(tokens.map(async (token) => {
             const tokenUpper = token.toUpperCase();
             const cacheKey = `price:${tokenUpper}`;
-            const cachedPrice = await this.cacheManager.get<number>(cacheKey);
+            const cachedData = await this.cacheManager.get<{ price: number; change24h: number }>(cacheKey);
 
-            if (cachedPrice) {
-                prices.set(tokenUpper, cachedPrice);
+            if (cachedData) {
+                prices.set(tokenUpper, cachedData);
             } else {
                 tokensToFetch.push(token);
             }
@@ -135,9 +130,13 @@ export class PriceService {
 
                 if (response.data[coinId]?.usd) {
                     const price = response.data[coinId].usd;
-                    prices.set(tokenUpper, price);
-                    // Cache the new price
-                    this.cacheManager.set(`price:${tokenUpper}`, price, 60000);
+                    const change24h = response.data[coinId].usd_24h_change || 0;
+
+                    const data = { price, change24h };
+                    prices.set(tokenUpper, data);
+
+                    // Cache the new price data
+                    this.cacheManager.set(`price:${tokenUpper}`, data, 60000);
                 }
             });
 
@@ -163,11 +162,11 @@ export class PriceService {
                 // This will use cache if available, or fetch if not
                 const prices = await this.getPrices(popularTokens);
 
-                prices.forEach((price, token) => {
+                prices.forEach((data, token) => {
                     this.realtimeGateway.broadcastTickerUpdate(token, {
                         token,
-                        price,
-                        change24h: 0,
+                        price: data.price,
+                        change24h: data.change24h,
                         timestamp: Date.now()
                     });
                 });

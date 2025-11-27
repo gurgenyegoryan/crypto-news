@@ -12,7 +12,7 @@ export class AuthController {
         if (!user) {
             throw new Error('Invalid credentials');
         }
-        return this.authService.login(user);
+        return this.authService.login(user, req.twoFactorCode);
     }
 
     @Post('signup')
@@ -28,7 +28,7 @@ export class AuthController {
         if (!user) {
             throw new Error('User not found');
         }
-        const { password, verificationToken, verificationTokenExpiry, ...userWithoutSensitiveData } = user;
+        const { password, verificationToken, verificationTokenExpiry, twoFactorSecret, ...userWithoutSensitiveData } = user;
         return userWithoutSensitiveData;
     }
 
@@ -47,5 +47,25 @@ export class AuthController {
     @Post('change-password')
     async changePassword(@Request() req: any, @Body() body: { currentPassword: string; newPassword: string }) {
         return this.authService.changePassword(req.user.id, body.currentPassword, body.newPassword);
+    }
+
+    // === 2FA Endpoints ===
+
+    @UseGuards(AuthGuard('jwt'))
+    @Post('2fa/generate')
+    async generate2FA(@Request() req: any) {
+        return this.authService.generate2FASecret(req.user.id);
+    }
+
+    @UseGuards(AuthGuard('jwt'))
+    @Post('2fa/enable')
+    async enable2FA(@Request() req: any, @Body() body: { code: string }) {
+        return this.authService.enable2FA(req.user.id, body.code);
+    }
+
+    @UseGuards(AuthGuard('jwt'))
+    @Post('2fa/disable')
+    async disable2FA(@Request() req: any, @Body() body: { code: string }) {
+        return this.authService.disable2FA(req.user.id, body.code);
     }
 }

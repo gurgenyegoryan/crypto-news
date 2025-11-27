@@ -12,13 +12,16 @@ interface User {
 
 interface AuthContextType {
     user: User | null;
-    login: (email: string, password: string) => Promise<void>;
+    login: (email: string, password: string, twoFactorCode?: string) => Promise<{ success?: boolean; requiresTwoFactor?: boolean }>;
     signup: (email: string, password: string, name: string) => Promise<void>;
     logout: () => void;
     updateProfile: (name: string, email: string) => void;
     resendVerification: () => Promise<void>;
     isAuthenticated: boolean;
     error: string | null;
+    generate2FA: () => Promise<{ secret: string; qrCodeUrl: string }>;
+    enable2FA: (code: string) => Promise<{ message: string }>;
+    disable2FA: (code: string) => Promise<{ message: string }>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -113,7 +116,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
     };
 
-    const login = async (email: string, password: string) => {
+    const login = async (email: string, password: string, twoFactorCode?: string) => {
         try {
             setError(null);
 
@@ -122,7 +125,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ email, password }),
+                body: JSON.stringify({ email, password, twoFactorCode }),
             });
 
             if (!response.ok) {
@@ -132,6 +135,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
             const data = await response.json();
 
+            // Handle 2FA requirement
+            if (data.requiresTwoFactor) {
+                return { requiresTwoFactor: true };
+            }
+
             // Save token and user data
             localStorage.setItem("auth_token", data.access_token);
             localStorage.setItem("user", JSON.stringify(data.user));
@@ -139,10 +147,67 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
             // Use router.push for SPA navigation
             router.push('/dashboard');
+            return { success: true };
         } catch (err: any) {
             setError(err.message);
             throw err;
         }
+    };
+
+    const generate2FA = async () => {
+        const token = localStorage.getItem("auth_token");
+        const response = await fetch(`${API_URL}/auth/2fa/generate`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+            },
+        });
+        if (!response.ok) throw new Error('Failed to generate 2FA');
+        return response.json();
+    };
+
+    const enable2FA = async (code: string) => {
+        const token = localStorage.getItem("auth_token");
+        const response = await fetch(`${API_URL}/auth/2fa/enable`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`,
+            },
+            body: JSON.stringify({ code }),
+        });
+        if (!response.ok) throw new Error('Failed to enable 2FA');
+
+        // Update local user state
+        if (user) {
+            const updatedUser = { ...user, isTwoFactorEnabled: true };
+            setUser(updatedUser);
+            localStorage.setItem("user", JSON.stringify(updatedUser));
+        }
+
+        return response.json();
+    };
+
+    const disable2FA = async (code: string) => {
+        const token = localStorage.getItem("auth_token");
+        const response = await fetch(`${API_URL}/auth/2fa/disable`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`,
+            },
+            body: JSON.stringify({ code }),
+        });
+        if (!response.ok) throw new Error('Failed to disable 2FA');
+
+        // Update local user state
+        if (user) {
+            const updatedUser = { ...user, isTwoFactorEnabled: false };
+            setUser(updatedUser);
+            localStorage.setItem("user", JSON.stringify(updatedUser));
+        }
+
+        return response.json();
     };
 
     const logout = () => {
@@ -182,7 +247,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
 
     return (
-        <AuthContext.Provider value={{ user, login, signup, logout, updateProfile, resendVerification, isAuthenticated: !!user, error }}>
+        <AuthContext.Provider value={{
+            user,
+            login,
+            signup,
+            logout,
+            updateProfile,
+            resendVerification,
+            isAuthenticated: !!user,
+            error,
+            generate2FA,
+            enable2FA,
+            disable2FA
+        }}>
             {children}
         </AuthContext.Provider>
     );

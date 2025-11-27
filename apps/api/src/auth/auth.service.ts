@@ -4,6 +4,8 @@ import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { EmailService } from '../email/email.service';
 import { randomBytes } from 'crypto';
+import { authenticator } from 'otplib';
+import { toDataURL } from 'qrcode';
 
 @Injectable()
 export class AuthService {
@@ -26,7 +28,24 @@ export class AuthService {
         return this.usersService.findById(id);
     }
 
-    async login(user: any) {
+    async login(user: any, twoFactorCode?: string) {
+        // Check if 2FA is enabled
+        if (user.isTwoFactorEnabled && !twoFactorCode) {
+            return {
+                requiresTwoFactor: true,
+                userId: user.id,
+                email: user.email,
+            };
+        }
+
+        // Verify 2FA code if enabled
+        if (user.isTwoFactorEnabled && twoFactorCode) {
+            const isValid = await this.verify2FACode(user.id, twoFactorCode);
+            if (!isValid) {
+                throw new UnauthorizedException('Invalid 2FA code');
+            }
+        }
+
         const payload = { email: user.email, sub: user.id };
         return {
             access_token: this.jwtService.sign(payload),
@@ -35,6 +54,7 @@ export class AuthService {
                 email: user.email,
                 name: user.name,
                 isVerified: user.isVerified,
+                isTwoFactorEnabled: user.isTwoFactorEnabled,
             }
         };
     }
@@ -124,5 +144,85 @@ export class AuthService {
         });
 
         return { message: 'Password changed successfully' };
+    }
+
+    // === 2FA Methods ===
+
+    async generate2FASecret(userId: string) {
+        const user = await this.usersService.findById(userId);
+        if (!user) throw new NotFoundException('User not found');
+
+        const secret = authenticator.generateSecret();
+        const otpauthUrl = authenticator.keyuri(user.email, 'CryptoMonitor', secret);
+
+        // Save secret temporarily (or permanently but inactive)
+        await this.usersService.update(userId, {
+            twoFactorSecret: secret,
+        });
+
+        const qrCodeUrl = await toDataURL(otpauthUrl);
+
+        return {
+            secret,
+            qrCodeUrl,
+        };
+    }
+
+    async enable2FA(userId: string, code: string) {
+        const user = await this.usersService.findById(userId);
+        if (!user || !user.twoFactorSecret) {
+            throw new BadRequestException('2FA setup not initiated');
+        }
+
+        const isValid = authenticator.verify({
+            token: code,
+            secret: user.twoFactorSecret,
+        });
+
+        if (!isValid) {
+            throw new BadRequestException('Invalid 2FA code');
+        }
+
+        await this.usersService.update(userId, {
+            isTwoFactorEnabled: true,
+        });
+
+        return { message: '2FA enabled successfully' };
+    }
+
+    async disable2FA(userId: string, code: string) {
+        const user = await this.usersService.findById(userId);
+        if (!user) throw new NotFoundException('User not found');
+
+        if (!user.isTwoFactorEnabled) {
+            throw new BadRequestException('2FA is not enabled');
+        }
+
+        // Verify code before disabling
+        const isValid = authenticator.verify({
+            token: code,
+            secret: user.twoFactorSecret,
+        });
+
+        if (!isValid) {
+            throw new BadRequestException('Invalid 2FA code');
+        }
+
+        await this.usersService.update(userId, {
+            isTwoFactorEnabled: false,
+            twoFactorSecret: null,
+        });
+
+        return { message: '2FA disabled successfully' };
+    }
+
+    async verify2FACode(userId: string, code: string): Promise<boolean> {
+        const user = await this.usersService.findById(userId);
+        if (!user || !user.twoFactorSecret) return false;
+
+        return authenticator.verify({
+            token: code,
+            secret: user.twoFactorSecret,
+        });
     }
 }

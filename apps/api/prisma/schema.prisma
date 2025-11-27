@@ -24,6 +24,10 @@ model User {
   verificationToken       String?   @unique @map("verification_token")
   verificationTokenExpiry DateTime? @map("verification_token_expiry")
 
+  // 2FA
+  twoFactorSecret    String?   @map("two_factor_secret")
+  isTwoFactorEnabled Boolean   @default(false) @map("is_two_factor_enabled")
+
   // Subscription management
   premiumUntil       DateTime? @map("premium_until")
   lastPaymentDate    DateTime? @map("last_payment_date")

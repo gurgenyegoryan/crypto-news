@@ -1,15 +1,23 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 
 export default function LoginPage() {
-    const { login, error } = useAuth();
+    const { login, error, isAuthenticated } = useAuth();
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [loading, setLoading] = useState(false);
     const [localError, setLocalError] = useState("");
+    const router = useRouter();
+
+    useEffect(() => {
+        if (isAuthenticated) {
+            router.push("/dashboard");
+        }
+    }, [isAuthenticated, router]);
 
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -48,36 +56,57 @@ export default function LoginPage() {
                 )}
 
                 <form onSubmit={handleLogin} className="space-y-4">
-                    <div>
-                        <label className="block text-sm font-medium text-gray-400 mb-1">Email Address</label>
-                        <input
-                            type="email"
-                            value={email}
-                            onChange={(e) => setEmail(e.target.value)}
-                            className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 focus:border-purple-500 focus:ring-1 focus:ring-purple-500 outline-none transition-all"
-                            placeholder="you@example.com"
-                            required
-                        />
-                    </div>
+                    {!requiresTwoFactor ? (
+                        <>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-400 mb-1">Email Address</label>
+                                <input
+                                    type="email"
+                                    value={email}
+                                    onChange={(e) => setEmail(e.target.value)}
+                                    className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 focus:border-purple-500 focus:ring-1 focus:ring-purple-500 outline-none transition-all"
+                                    placeholder="you@example.com"
+                                    required
+                                />
+                            </div>
 
-                    <div>
-                        <label className="block text-sm font-medium text-gray-400 mb-1">Password</label>
-                        <input
-                            type="password"
-                            value={password}
-                            onChange={(e) => setPassword(e.target.value)}
-                            className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 focus:border-purple-500 focus:ring-1 focus:ring-purple-500 outline-none transition-all"
-                            placeholder="••••••••"
-                            required
-                        />
-                    </div>
+                            <div>
+                                <label className="block text-sm font-medium text-gray-400 mb-1">Password</label>
+                                <input
+                                    type="password"
+                                    value={password}
+                                    onChange={(e) => setPassword(e.target.value)}
+                                    className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 focus:border-purple-500 focus:ring-1 focus:ring-purple-500 outline-none transition-all"
+                                    placeholder="••••••••"
+                                    required
+                                />
+                            </div>
+                        </>
+                    ) : (
+                        <div>
+                            <label className="block text-sm font-medium text-gray-400 mb-1">Two-Factor Code</label>
+                            <input
+                                type="text"
+                                value={twoFactorCode}
+                                onChange={(e) => setTwoFactorCode(e.target.value)}
+                                className="w-full px-4 py-3 rounded-xl bg-white/5 border border-white/10 focus:border-purple-500 focus:ring-1 focus:ring-purple-500 outline-none transition-all text-center tracking-widest text-2xl"
+                                placeholder="000000"
+                                maxLength={6}
+                                required
+                                autoFocus
+                            />
+                            <p className="text-xs text-gray-500 mt-2 text-center">
+                                Enter the 6-digit code from your authenticator app
+                            </p>
+                        </div>
+                    )}
 
                     <button
                         type="submit"
                         disabled={loading}
                         className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white font-bold transition-all transform hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                        {loading ? "Signing in..." : "Sign In"}
+                        {loading ? "Verifying..." : (requiresTwoFactor ? "Verify Code" : "Sign In")}
                     </button>
                 </form>
 

@@ -53,8 +53,11 @@ export class RealtimeGateway implements OnGatewayConnection, OnGatewayDisconnect
 
             this.logger.log(`User ${userId} connected: ${client.id}`);
         } catch (error) {
-            this.logger.error(`Connection error: ${error.message}`);
-            // Don't disconnect, just treat as anonymous
+            // Don't log JWT errors for anonymous connections - they're expected
+            if (error.message !== 'jwt malformed' && error.message !== 'jwt must be provided') {
+                this.logger.error(`Connection error: ${error.message}`);
+            }
+            // Allow connection anyway for public data
         }
     }
 

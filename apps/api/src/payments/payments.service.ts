@@ -44,9 +44,25 @@ export class PaymentsService {
             // Simulate processing delay
             await new Promise(resolve => setTimeout(resolve, 1500));
 
-            // Calculate subscription end date (30 days from now)
-            const premiumUntil = new Date();
-            premiumUntil.setDate(premiumUntil.getDate() + 30);
+            // Get current user to check if they have an existing subscription
+            const currentUser = await this.prisma.user.findUnique({
+                where: { id: userId },
+                select: { premiumUntil: true, tier: true }
+            });
+
+            // Calculate subscription end date
+            let premiumUntil: Date;
+
+            if (currentUser?.tier === 'premium' && currentUser.premiumUntil && currentUser.premiumUntil > new Date()) {
+                // User is renewing - extend from current expiry date
+                premiumUntil = new Date(currentUser.premiumUntil);
+                premiumUntil.setDate(premiumUntil.getDate() + 30);
+                this.logger.log(`Renewal: extending from ${currentUser.premiumUntil.toISOString()} to ${premiumUntil.toISOString()}`);
+            } else {
+                // New subscription - start from now
+                premiumUntil = new Date();
+                premiumUntil.setDate(premiumUntil.getDate() + 30);
+            }
 
             // Create payment record
             const payment = await this.prisma.payment.create({

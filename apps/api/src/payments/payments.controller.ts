@@ -1,4 +1,4 @@
-import { Controller, Post, Body, UseGuards, Request } from '@nestjs/common';
+import { Controller, Post, Get, Body, UseGuards, Request } from '@nestjs/common';
 import { PaymentsService } from './payments.service';
 import { AuthGuard } from '@nestjs/passport';
 
@@ -10,5 +10,10 @@ export class PaymentsController {
     @Post('verify')
     verifyPayment(@Request() req: any, @Body() body: { txHash: string }) {
         return this.paymentsService.verifyPayment(req.user.id, body.txHash);
+    }
+
+    @Get('subscription-status')
+    getSubscriptionStatus(@Request() req: any) {
+        return this.paymentsService.getSubscriptionStatus(req.user.id);
     }
 }

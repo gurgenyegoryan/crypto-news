@@ -102,43 +102,53 @@ export class BlockchainService {
         try {
             const apiKey = process.env.ETHERSCAN_API_KEY || 'YourApiKeyToken'; // Free tier available
 
-            // Get the latest block
-            const latestBlock = await this.ethClient.getBlockNumber();
-            const block = await this.ethClient.getBlock({ blockNumber: latestBlock, includeTransactions: true });
-
+            // Get the latest block and scan last 10 blocks for more data
+            const latestBlockNumber = await this.ethClient.getBlockNumber();
             const largeTransactions: BlockchainTransaction[] = [];
 
-            if (block && block.transactions) {
-                for (const txHash of block.transactions) {
-                    if (typeof txHash === 'string') {
-                        try {
-                            const tx = await this.ethClient.getTransaction({ hash: txHash as `0x${string}` });
+            // Scan last 10 blocks
+            for (let i = 0; i < 10; i++) {
+                const blockNumber = latestBlockNumber - BigInt(i);
 
-                            if (tx && tx.value) {
-                                const valueEth = parseFloat(formatEther(tx.value));
+                try {
+                    const block = await this.ethClient.getBlock({ blockNumber, includeTransactions: true });
 
-                                // Only include large transactions
-                                if (valueEth >= minValueEth) {
-                                    const fromInfo = this.getWalletLabel(tx.from);
-                                    const toInfo = tx.to ? this.getWalletLabel(tx.to) : { label: null, isExchange: false };
+                    if (block && block.transactions) {
+                        for (const txHash of block.transactions) {
+                            if (typeof txHash === 'string') {
+                                try {
+                                    const tx = await this.ethClient.getTransaction({ hash: txHash as `0x${string}` });
 
-                                    largeTransactions.push({
-                                        hash: tx.hash,
-                                        from: tx.from,
-                                        to: tx.to || '',
-                                        value: valueEth.toFixed(4),
-                                        token: 'ETH',
-                                        timestamp: Number(block.timestamp) * 1000,
-                                        blockNumber: Number(tx.blockNumber),
-                                        chain: 'Ethereum',
-                                    });
+                                    if (tx && tx.value) {
+                                        const valueEth = parseFloat(formatEther(tx.value));
+
+                                        // Only include large transactions
+                                        if (valueEth >= minValueEth) {
+                                            const fromInfo = this.getWalletLabel(tx.from);
+                                            const toInfo = tx.to ? this.getWalletLabel(tx.to) : { label: null, isExchange: false };
+
+                                            largeTransactions.push({
+                                                hash: tx.hash,
+                                                from: tx.from,
+                                                to: tx.to || '',
+                                                value: valueEth.toFixed(4),
+                                                token: 'ETH',
+                                                timestamp: Number(block.timestamp) * 1000,
+                                                blockNumber: Number(tx.blockNumber),
+                                                chain: 'Ethereum',
+                                            });
+                                        }
+                                    }
+                                } catch (error) {
+                                    // Skip failed transactions
+                                    continue;
                                 }
                             }
-                        } catch (error) {
-                            // Skip failed transactions
-                            continue;
                         }
                     }
+                } catch (error) {
+                    console.error(`Error fetching block ${blockNumber}:`, error.message);
+                    continue;
                 }
             }
 

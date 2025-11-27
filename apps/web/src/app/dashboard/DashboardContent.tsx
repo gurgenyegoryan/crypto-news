@@ -63,6 +63,12 @@ export default function DashboardContent() {
     const [newWallet, setNewWallet] = useState({ address: "", label: "", chain: "ETH" });
     const [paymentTxHash, setPaymentTxHash] = useState("");
     const [isPremium, setIsPremium] = useState(false);
+    const [subscriptionInfo, setSubscriptionInfo] = useState<{
+        premiumUntil: string | null;
+        daysRemaining: number;
+        isActive: boolean;
+        needsRenewal: boolean;
+    } | null>(null);
 
     // Settings state
     const [settings, setSettings] = useState({
@@ -119,9 +125,30 @@ export default function DashboardContent() {
                 });
                 setProfileName(data.name || "");
                 setProfileEmail(data.email || "");
+
+                // Fetch subscription status if premium
+                if (data.tier === 'premium') {
+                    fetchSubscriptionStatus();
+                }
             }
         } catch (e) {
             console.error("Failed to fetch user profile", e);
+        }
+    };
+
+    const fetchSubscriptionStatus = async () => {
+        const token = localStorage.getItem("auth_token");
+        if (!token) return;
+        try {
+            const res = await fetch(`${API_URL}/payments/subscription-status`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (res.ok) {
+                const data = await res.json();
+                setSubscriptionInfo(data);
+            }
+        } catch (e) {
+            console.error("Failed to fetch subscription status", e);
         }
     };
 
@@ -813,6 +840,44 @@ export default function DashboardContent() {
                                     </div>
                                 )}
                             </div>
+
+                            {/* Subscription Renewal Section */}
+                            {isPremium && subscriptionInfo && (
+                                <div className="p-6 rounded-2xl bg-gradient-to-br from-purple-900/20 to-pink-900/20 border border-purple-500/30 space-y-4">
+                                    <div className="flex items-center justify-between">
+                                        <div>
+                                            <h3 className="font-bold text-lg">Premium Subscription</h3>
+                                            <p className="text-sm text-gray-400 mt-1">
+                                                {subscriptionInfo.daysRemaining > 0
+                                                    ? `${subscriptionInfo.daysRemaining} day${subscriptionInfo.daysRemaining > 1 ? 's' : ''} remaining`
+                                                    : 'Expired'}
+                                            </p>
+                                        </div>
+                                        {subscriptionInfo.needsRenewal && (
+                                            <span className="px-3 py-1 bg-yellow-500/20 text-yellow-400 rounded-full text-xs font-medium">
+                                                Renew Soon
+                                            </span>
+                                        )}
+                                    </div>
+
+                                    {subscriptionInfo.premiumUntil && (
+                                        <div className="text-sm text-gray-400">
+                                            Expires on: {new Date(subscriptionInfo.premiumUntil).toLocaleDateString()}
+                                        </div>
+                                    )}
+
+                                    <button
+                                        onClick={() => setShowModal("payment")}
+                                        className="w-full py-3 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 font-bold transition-all"
+                                    >
+                                        Renew Subscription
+                                    </button>
+
+                                    <p className="text-xs text-gray-500 text-center">
+                                        Renewing before expiry extends your subscription from the current end date
+                                    </p>
+                                </div>
+                            )}
 
                             {/* Password Change Section */}
                             <div className="bg-white/5 border border-white/10 rounded-2xl p-6">

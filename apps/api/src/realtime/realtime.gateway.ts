@@ -105,6 +105,10 @@ export class RealtimeGateway implements OnGatewayConnection, OnGatewayDisconnect
 
     // Public method to broadcast events
     broadcastTickerUpdate(token: string, data: any) {
+        if (!this.server) {
+            this.logger.warn('WebSocket server not initialized yet');
+            return;
+        }
         // Broadcast to both room subscribers and all clients
         this.server.to(`ticker:${token.toUpperCase()}`).emit('tickerUpdate', data);
         this.server.emit('tickerUpdate', data); // Also broadcast globally
@@ -112,11 +116,19 @@ export class RealtimeGateway implements OnGatewayConnection, OnGatewayDisconnect
 
     // Send private update to specific user
     sendUserUpdate(userId: string, event: string, data: any) {
+        if (!this.server) {
+            this.logger.warn('WebSocket server not initialized yet');
+            return;
+        }
         this.server.to(`user:${userId}`).emit(event, data);
     }
 
     // Broadcast to all connected clients
     broadcastGlobal(event: string, data: any) {
+        if (!this.server) {
+            this.logger.warn('WebSocket server not initialized yet');
+            return;
+        }
         this.server.emit(event, data);
     }
 }

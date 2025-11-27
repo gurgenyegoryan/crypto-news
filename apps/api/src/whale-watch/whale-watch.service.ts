@@ -85,8 +85,8 @@ export class WhaleWatchService implements OnModuleInit {
         try {
             console.log('[WhaleWatch] Fetching new whale transactions...');
 
-            // Fetch large ETH transactions (> 100 ETH)
-            const ethTransactions = await this.blockchainService.getRecentLargeEthTransactions(100);
+            // Fetch large ETH transactions (> 1 ETH for more activity)
+            const ethTransactions = await this.blockchainService.getRecentLargeEthTransactions(1);
 
             // Get ETH price for USD conversion
             const ethPrice = await this.blockchainService.getEthPrice();

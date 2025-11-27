@@ -102,7 +102,9 @@ export class RealtimeGateway implements OnGatewayConnection, OnGatewayDisconnect
 
     // Public method to broadcast events
     broadcastTickerUpdate(token: string, data: any) {
+        // Broadcast to both room subscribers and all clients
         this.server.to(`ticker:${token.toUpperCase()}`).emit('tickerUpdate', data);
+        this.server.emit('tickerUpdate', data); // Also broadcast globally
     }
 
     // Send private update to specific user

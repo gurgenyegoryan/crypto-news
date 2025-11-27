@@ -142,8 +142,8 @@ export class PriceService {
     private startPriceUpdates() {
         const popularTokens = ['BTC', 'ETH', 'BNB', 'SOL', 'XRP', 'ADA', 'DOGE', 'DOT'];
 
-        // Update every 60 seconds to respect CoinGecko free tier limits (50 calls/min)
-        setInterval(async () => {
+        // Fetch prices immediately on startup
+        const broadcastPrices = async () => {
             try {
                 const prices = await this.getPrices(popularTokens);
 
@@ -155,9 +155,17 @@ export class PriceService {
                         timestamp: Date.now()
                     });
                 });
+
+                this.logger.log(`Broadcasted prices for ${prices.size} tokens`);
             } catch (error) {
                 this.logger.error('Error in price update loop:', error);
             }
-        }, 60000); // Changed from 10s to 60s
+        };
+
+        // Broadcast immediately
+        broadcastPrices();
+
+        // Update every 10 seconds for better UX (still within CoinGecko limits with batch requests)
+        setInterval(broadcastPrices, 10000);
     }
 }

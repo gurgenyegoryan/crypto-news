@@ -137,7 +137,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             localStorage.setItem("user", JSON.stringify(data.user));
             setUser(data.user);
 
-            router.push("/dashboard");
+            // Use window.location for more reliable redirect
+            window.location.href = '/dashboard';
         } catch (err: any) {
             setError(err.message);
             throw err;

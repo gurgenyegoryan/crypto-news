@@ -63,8 +63,10 @@ export class SubscriptionReminderService {
                     this.logger.log(`Sent ${daysRemaining}-day reminder to ${user.email}`);
                 }
 
-                // Send email notification
-                await this.emailService.sendExpiryReminder(user.email, daysRemaining);
+                // Send email notification if user has enabled email alerts
+                if (user.emailAlerts) {
+                    await this.emailService.sendExpiryReminder(user.email, daysRemaining);
+                }
             } catch (error) {
                 this.logger.error(`Failed to send reminder to ${user.email}: ${error.message}`);
             }

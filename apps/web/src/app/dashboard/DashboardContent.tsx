@@ -63,6 +63,7 @@ export default function DashboardContent() {
     const [newAlert, setNewAlert] = useState({ token: "", price: "", type: "above" as "above" | "below" });
     const [newWallet, setNewWallet] = useState({ address: "", label: "", chain: "ETH" });
     const [paymentTxHash, setPaymentTxHash] = useState("");
+    const [isVerifyingPayment, setIsVerifyingPayment] = useState(false);
     const [isPremium, setIsPremium] = useState(false);
     const [subscriptionInfo, setSubscriptionInfo] = useState<{
         premiumUntil: string | null;
@@ -389,6 +390,7 @@ export default function DashboardContent() {
         const token = localStorage.getItem("auth_token");
         if (!token) return;
 
+        setIsVerifyingPayment(true);
         try {
             const res = await fetch(`${API_URL}/payments/verify`, {
                 method: 'POST',
@@ -399,17 +401,22 @@ export default function DashboardContent() {
                 body: JSON.stringify({ txHash: paymentTxHash })
             });
 
+            const data = await res.json();
+
             if (res.ok) {
-                const data = await res.json();
                 setNotification({ type: 'success', message: data.message });
                 setIsPremium(true);
                 setShowModal(null);
                 setPaymentTxHash("");
+                fetchSubscriptionStatus(); // Refresh subscription info
             } else {
-                setNotification({ type: 'error', message: "Payment verification failed. Please check the hash." });
+                setNotification({ type: 'error', message: data.message || "Payment verification failed. Please check the hash." });
             }
         } catch (e) {
             console.error("Payment verification error", e);
+            setNotification({ type: 'error', message: "Network error. Please try again." });
+        } finally {
+            setIsVerifyingPayment(false);
         }
     };
     const handleSaveSettings = async () => {

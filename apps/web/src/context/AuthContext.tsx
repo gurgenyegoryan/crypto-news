@@ -19,6 +19,7 @@ interface AuthContextType {
     resendVerification: () => Promise<void>;
     isAuthenticated: boolean;
     error: string | null;
+    loading: boolean;
     generate2FA: () => Promise<{ secret: string; qrCodeUrl: string }>;
     enable2FA: (code: string) => Promise<{ message: string }>;
     disable2FA: (code: string) => Promise<{ message: string }>;
@@ -51,6 +52,7 @@ function validatePassword(password: string): string | null {
 export function AuthProvider({ children }: { children: ReactNode }) {
     const [user, setUser] = useState<User | null>(null);
     const [error, setError] = useState<string | null>(null);
+    const [loading, setLoading] = useState(true);
     const router = useRouter();
 
     useEffect(() => {
@@ -74,7 +76,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
                     // Token is invalid, clear it
                     localStorage.removeItem("auth_token");
                     localStorage.removeItem("user");
+                })
+                .finally(() => {
+                    setLoading(false);
                 });
+        } else {
+            setLoading(false);
         }
     }, []);
 
@@ -256,6 +263,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             resendVerification,
             isAuthenticated: !!user,
             error,
+            loading,
             generate2FA,
             enable2FA,
             disable2FA

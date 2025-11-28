@@ -198,6 +198,10 @@ export class AuthService {
             throw new BadRequestException('2FA is not enabled');
         }
 
+        if (!user.twoFactorSecret) {
+            throw new BadRequestException('2FA secret not found');
+        }
+
         // Verify code before disabling
         const isValid = authenticator.verify({
             token: code,

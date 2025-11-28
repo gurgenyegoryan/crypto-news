@@ -9,6 +9,8 @@ export default function LoginPage() {
     const { login, error, isAuthenticated } = useAuth();
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
+    const [twoFactorCode, setTwoFactorCode] = useState("");
+    const [requiresTwoFactor, setRequiresTwoFactor] = useState(false);
     const [loading, setLoading] = useState(false);
     const [localError, setLocalError] = useState("");
     const router = useRouter();
@@ -31,7 +33,11 @@ export default function LoginPage() {
         setLocalError("");
 
         try {
-            await login(email, password);
+            const result = await login(email, password, twoFactorCode);
+            if (result && result.requiresTwoFactor) {
+                setRequiresTwoFactor(true);
+                setLocalError(""); // Clear any previous errors
+            }
         } catch (err: any) {
             setLocalError(err.message || "Login failed");
         } finally {

@@ -53,17 +53,18 @@ export class AlertCheckerService {
 
                 let shouldTrigger = false;
                 const targetPrice = parseFloat(alert.price.toString());
+                const priceValue = typeof currentPrice === 'number' ? currentPrice : currentPrice.price;
 
                 // Check if alert should trigger based on type
-                if (alert.type === 'above' && currentPrice >= targetPrice) {
+                if (alert.type === 'above' && priceValue >= targetPrice) {
                     shouldTrigger = true;
-                } else if (alert.type === 'below' && currentPrice <= targetPrice) {
+                } else if (alert.type === 'below' && priceValue <= targetPrice) {
                     shouldTrigger = true;
                 }
 
                 if (shouldTrigger) {
                     this.logger.log(
-                        `Alert ${alert.id} triggered: ${alert.token} is ${alert.type} ${targetPrice} (current: ${currentPrice})`
+                        `Alert ${alert.id} triggered: ${alert.token} is ${alert.type} ${targetPrice} (current: ${priceValue})`
                     );
 
                     // Send Telegram notification if user has telegram ID
@@ -71,7 +72,7 @@ export class AlertCheckerService {
                         await this.telegramService.sendPriceAlert(
                             alert.user.telegramId,
                             alert.token,
-                            currentPrice,
+                            priceValue,
                             targetPrice,
                             alert.type
                         );

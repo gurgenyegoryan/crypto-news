@@ -224,11 +224,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         router.push("/login");
     };
 
-    const updateProfile = (name: string, email: string) => {
+    const updateProfile = async (name: string, email: string) => {
         if (!user) return;
-        const updatedUser = { ...user, name, email };
-        setUser(updatedUser);
-        localStorage.setItem("user", JSON.stringify(updatedUser));
+        try {
+            const token = localStorage.getItem("auth_token");
+            const response = await fetch(`${API_URL}/auth/profile`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`,
+                },
+                body: JSON.stringify({ name, email }),
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json();
+                throw new Error(errorData.message || 'Failed to update profile');
+            }
+
+            const updatedUser = await response.json();
+            setUser(updatedUser);
+            localStorage.setItem("user", JSON.stringify(updatedUser));
+        } catch (err: any) {
+            console.error("Failed to update profile", err);
+            throw err;
+        }
     };
 
     const resendVerification = async () => {

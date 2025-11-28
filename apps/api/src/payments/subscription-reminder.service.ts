@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { TelegramService } from '../telegram/telegram.service';
+import { EmailService } from '../email/email.service';
 import { Cron, CronExpression } from '@nestjs/schedule';
 
 @Injectable()
@@ -10,6 +11,7 @@ export class SubscriptionReminderService {
     constructor(
         private prisma: PrismaService,
         private telegramService: TelegramService,
+        private emailService: EmailService,
     ) { }
 
     /**
@@ -61,8 +63,8 @@ export class SubscriptionReminderService {
                     this.logger.log(`Sent ${daysRemaining}-day reminder to ${user.email}`);
                 }
 
-                // TODO: Send email notification as well
-                // await this.emailService.sendExpiryReminder(user.email, daysRemaining);
+                // Send email notification
+                await this.emailService.sendExpiryReminder(user.email, daysRemaining);
             } catch (error) {
                 this.logger.error(`Failed to send reminder to ${user.email}: ${error.message}`);
             }

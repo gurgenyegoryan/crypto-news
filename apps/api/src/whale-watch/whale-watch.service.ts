@@ -2,6 +2,7 @@ import { Injectable, OnModuleInit } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { BlockchainService, BlockchainTransaction } from '../blockchain/blockchain.service';
 import { RealtimeGateway } from '../realtime/realtime.gateway';
+import { EmailService } from '../email/email.service';
 
 export interface WhaleTransaction {
     hash: string;
@@ -28,6 +29,7 @@ export class WhaleWatchService implements OnModuleInit {
         private prisma: PrismaService,
         private blockchainService: BlockchainService,
         private realtimeGateway: RealtimeGateway,
+        private emailService: EmailService,
     ) { }
 
     async onModuleInit() {
@@ -188,7 +190,14 @@ export class WhaleWatchService implements OnModuleInit {
             });
 
             for (const alert of alerts) {
-                // TODO: Send notification to user (Telegram, Email)
+                // Send notification to user
+                await this.emailService.sendWhaleAlert(alert.user.email, {
+                    token: tx.token,
+                    amount: tx.value,
+                    valueUsd: parseFloat(tx.value) * 2000, // Approximate ETH price if not available
+                    from: tx.from,
+                    to: tx.to,
+                });
                 console.log(`[WhaleWatch] Alert triggered for user ${alert.user.email}: ${tx.hash}`);
             }
 

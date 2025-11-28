@@ -229,4 +229,23 @@ export class AuthService {
             secret: user.twoFactorSecret,
         });
     }
+
+    async updateProfile(userId: string, name: string, email: string) {
+        // Check if email is already taken by another user
+        if (email) {
+            const existingUser = await this.usersService.findOne(email);
+
+            if (existingUser && existingUser.id !== userId) {
+                throw new Error('Email is already in use');
+            }
+        }
+
+        const user = await this.usersService.update(userId, {
+            name,
+            email,
+        });
+
+        const { password, verificationToken, verificationTokenExpiry, twoFactorSecret, ...result } = user;
+        return result;
+    }
 }

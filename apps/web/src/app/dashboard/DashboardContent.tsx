@@ -10,6 +10,7 @@ import SecurityScanner from "@/components/SecurityScanner";
 import CopyTrading from "@/components/CopyTrading";
 import { useRealtime } from "@/hooks/useRealtime";
 import RecentWins from "@/components/RecentWins";
+import SettingsPage from "./SettingsPage";
 
 export default function DashboardContent() {
     const [activeTab, setActiveTab] = useState("Portfolio");
@@ -857,407 +858,38 @@ export default function DashboardContent() {
                 );
             case "Settings":
                 return (
-                    <div className="max-w-2xl mx-auto space-y-8">
-                        <h2 className="text-2xl font-bold mb-6">Account Settings</h2>
-
-                        <div className="space-y-4">
-                            <div className="p-6 rounded-2xl bg-white/5 border border-white/10 space-y-4">
-                                <h3 className="font-bold text-lg">Profile</h3>
-                                <div className="grid gap-4">
-                                    <div>
-                                        <label className="block text-sm text-gray-400 mb-1">Display Name</label>
-                                        <input
-                                            type="text"
-                                            value={profileName}
-                                            onChange={(e) => setProfileName(e.target.value)}
-                                            className="w-full px-4 py-2 rounded-lg bg-black/50 border border-white/10 text-gray-300 focus:border-purple-500 outline-none"
-                                        />
-                                    </div>
-                                    <div>
-                                        <label className="block text-sm text-gray-400 mb-1">Email Address</label>
-                                        <input
-                                            type="text"
-                                            value={profileEmail}
-                                            onChange={(e) => setProfileEmail(e.target.value)}
-                                            className="w-full px-4 py-2 rounded-lg bg-black/50 border border-white/10 text-gray-300 focus:border-purple-500 outline-none"
-                                        />
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* ... (keep Preferences) ... */}
-
-                            {/* Telegram Integration */}
-                            <div className="p-6 rounded-2xl bg-white/5 border border-white/10 space-y-4">
-                                <div className="flex items-center justify-between">
-                                    <div>
-                                        <h3 className="font-bold text-lg">Telegram Notifications</h3>
-                                        <p className="text-sm text-gray-400 mt-1">
-                                            {isPremium ? 'Receive real-time alerts on Telegram' : 'Available for Premium members only'}
-                                        </p>
-                                    </div>
-                                    {isPremium ? (
-                                        <button
-                                            onClick={() => setSettings({ ...settings, telegramAlerts: !settings.telegramAlerts })}
-                                            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${settings.telegramAlerts ? 'bg-purple-600' : 'bg-gray-600'}`}
-                                        >
-                                            <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${settings.telegramAlerts ? 'translate-x-6' : 'translate-x-1'}`} />
-                                        </button>
-                                    ) : (
-                                        <span className="px-3 py-1 bg-gray-700/50 text-gray-400 rounded-full text-xs font-medium">
-                                            Premium Only
-                                        </span>
-                                    )}
-                                </div>
-
-                                {isPremium && settings.telegramAlerts && (
-                                    <div className="pt-4 border-t border-white/10 space-y-3">
-                                        <p className="text-sm text-gray-400">
-                                            Start a chat with <a href="https://t.me/cryptomonitorappbot" target="_blank" className="text-purple-400 hover:underline">@cryptomonitorappbot</a> and enter your Chat ID below.
-                                        </p>
-                                        <div>
-                                            <label className="block text-sm text-gray-400 mb-1">Telegram Chat ID</label>
-                                            <div className="flex gap-2">
-                                                <input
-                                                    type="text"
-                                                    placeholder="e.g. 123456789"
-                                                    value={settings.telegramChatId}
-                                                    onChange={(e) => setSettings({ ...settings, telegramChatId: e.target.value })}
-                                                    className="flex-1 px-4 py-2 rounded-lg bg-black/50 border border-white/10 focus:border-purple-500 outline-none"
-                                                />
-                                                <button
-                                                    onClick={handleSaveSettings}
-                                                    className="px-4 py-2 bg-purple-600 hover:bg-purple-500 rounded-lg font-bold transition-all"
-                                                >
-                                                    {saveSuccess ? "Saved!" : "Save"}
-                                                </button>
-                                            </div>
-                                            <p className="text-xs text-gray-500 mt-2">
-                                                Don't know your Chat ID? Message <a href="https://t.me/userinfobot" target="_blank" className="text-purple-400 hover:underline">@userinfobot</a> on Telegram to get it.
-                                            </p>
-                                        </div>
-                                    </div>
-                                )}
-
-                                {!isPremium && (
-                                    <div className="pt-4 border-t border-white/10">
-                                        <button
-                                            onClick={() => setShowModal("payment")}
-                                            className="w-full py-3 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 font-bold transition-all"
-                                        >
-                                            Upgrade to Premium
-                                        </button>
-                                    </div>
-                                )}
-                            </div>
-
-                            {/* Subscription Renewal Section */}
-                            {isPremium && subscriptionInfo && (
-                                <div className="p-6 rounded-2xl bg-gradient-to-br from-purple-900/20 to-pink-900/20 border border-purple-500/30 space-y-4">
-                                    <div className="flex items-center justify-between">
-                                        <div>
-                                            <h3 className="font-bold text-lg">Premium Subscription</h3>
-                                            <p className="text-sm text-gray-400 mt-1">
-                                                {subscriptionInfo.daysRemaining > 0
-                                                    ? `${subscriptionInfo.daysRemaining} day${subscriptionInfo.daysRemaining > 1 ? 's' : ''} remaining`
-                                                    : 'Expired'}
-                                            </p>
-                                        </div>
-                                        {subscriptionInfo.needsRenewal && (
-                                            <span className="px-3 py-1 bg-yellow-500/20 text-yellow-400 rounded-full text-xs font-medium">
-                                                Renew Soon
-                                            </span>
-                                        )}
-                                    </div>
-
-                                    {subscriptionInfo.premiumUntil && (
-                                        <div className="text-sm text-gray-400">
-                                            Expires on: {new Date(subscriptionInfo.premiumUntil).toLocaleDateString()}
-                                        </div>
-                                    )}
-
-                                    <button
-                                        onClick={() => setShowModal("payment")}
-                                        className="w-full py-3 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 font-bold transition-all"
-                                    >
-                                        Renew Subscription
-                                    </button>
-
-                                    <p className="text-xs text-gray-500 text-center">
-                                        Renewing before expiry extends your subscription from the current end date
-                                    </p>
-                                </div>
-                            )}
-
-                            {/* Password Change Section */}
-                            <div className="bg-white/5 border border-white/10 rounded-2xl p-6">
-                                <h3 className="text-xl font-bold mb-4">Change Password</h3>
-
-                                {passwordError && (
-                                    <div className="mb-4 p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-sm">
-                                        {passwordError}
-                                    </div>
-                                )}
-
-                                {passwordSuccess && (
-                                    <div className="mb-4 p-3 rounded-lg bg-green-500/10 border border-green-500/20 text-green-400 text-sm">
-                                        Password changed successfully!
-                                    </div>
-                                )}
-
-                                <div className="space-y-4">
-                                    <div>
-                                        <label className="block text-sm text-gray-400 mb-1">Current Password</label>
-                                        <input
-                                            type="password"
-                                            value={passwordChange.currentPassword}
-                                            onChange={(e) => setPasswordChange({ ...passwordChange, currentPassword: e.target.value })}
-                                            className="w-full px-4 py-2 rounded-lg bg-white/5 border border-white/10 outline-none focus:border-purple-500"
-                                            placeholder="Enter current password"
-                                        />
-                                    </div>
-                                    <div>
-                                        <label className="block text-sm text-gray-400 mb-1">New Password</label>
-                                        <input
-                                            type="password"
-                                            value={passwordChange.newPassword}
-                                            onChange={(e) => setPasswordChange({ ...passwordChange, newPassword: e.target.value })}
-                                            className="w-full px-4 py-2 rounded-lg bg-white/5 border border-white/10 outline-none focus:border-purple-500"
-                                            placeholder="Enter new password (min 8 characters)"
-                                        />
-                                    </div>
-                                    <div>
-                                        <label className="block text-sm text-gray-400 mb-1">Confirm New Password</label>
-                                        <input
-                                            type="password"
-                                            value={passwordChange.confirmPassword}
-                                            onChange={(e) => setPasswordChange({ ...passwordChange, confirmPassword: e.target.value })}
-                                            className="w-full px-4 py-2 rounded-lg bg-white/5 border border-white/10 outline-none focus:border-purple-500"
-                                            placeholder="Confirm new password"
-                                        />
-                                    </div>
-                                    <button
-                                        onClick={handleChangePassword}
-                                        className="px-6 py-2 bg-purple-600 hover:bg-purple-700 rounded-lg font-medium transition-colors"
-                                    >
-                                        Change Password
-                                    </button>
-                                </div>
-                            </div>
-
-                            {/* Two-Factor Authentication Section */}
-                            <div className="bg-white/5 border border-white/10 rounded-2xl p-6">
-                                <h3 className="text-xl font-bold mb-4">Two-Factor Authentication</h3>
-                                <p className="text-sm text-gray-400 mb-4">
-                                    Add an extra layer of security to your account with Google Authenticator
-                                </p>
-
-                                {twoFactorError && (
-                                    <div className="mb-4 p-3 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-sm">
-                                        {twoFactorError}
-                                    </div>
-                                )}
-
-                                {twoFactorSuccess && (
-                                    <div className="mb-4 p-3 rounded-lg bg-green-500/10 border border-green-500/20 text-green-400 text-sm">
-                                        {twoFactorSuccess}
-                                    </div>
-                                )}
-
-                                {!isTwoFactorEnabled ? (
-                                    <div className="space-y-4">
-                                        {!twoFactorQR ? (
-                                            <button
-                                                onClick={handleGenerate2FA}
-                                                disabled={twoFactorLoading}
-                                                className="px-6 py-2 bg-purple-600 hover:bg-purple-700 rounded-lg font-medium transition-colors disabled:opacity-50"
-                                            >
-                                                {twoFactorLoading ? "Generating..." : "Enable 2FA"}
-                                            </button>
-                                        ) : (
-                                            <div className="space-y-4">
-                                                <div className="p-4 bg-white rounded-lg inline-block">
-                                                    <img src={twoFactorQR} alt="2FA QR Code" className="w-48 h-48" />
-                                                </div>
-                                                <p className="text-sm text-gray-400">
-                                                    Scan this QR code with Google Authenticator app
-                                                </p>
-                                                <div>
-                                                    <label className="block text-sm text-gray-400 mb-1">Enter 6-digit code</label>
-                                                    <div className="flex gap-2">
-                                                        <input
-                                                            type="text"
-                                                            value={twoFactorCode}
-                                                            onChange={(e) => setTwoFactorCode(e.target.value)}
-                                                            maxLength={6}
-                                                            placeholder="000000"
-                                                            className="flex-1 px-4 py-2 rounded-lg bg-white/5 border border-white/10 outline-none focus:border-purple-500 text-center tracking-widest text-xl"
-                                                        />
-                                                        <button
-                                                            onClick={handleEnable2FA}
-                                                            disabled={twoFactorLoading || twoFactorCode.length !== 6}
-                                                            className="px-6 py-2 bg-green-600 hover:bg-green-700 rounded-lg font-medium transition-colors disabled:opacity-50"
-                                                        >
-                                                            {twoFactorLoading ? "Verifying..." : "Verify & Enable"}
-                                                        </button>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        )}
-                                    </div>
-                                ) : (
-                                    <div className="space-y-4">
-                                        <div className="flex items-center gap-2 text-green-400">
-                                            <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                                                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-                                            </svg>
-                                            <span className="font-medium">2FA is enabled</span>
-                                        </div>
-                                        <div>
-                                            <label className="block text-sm text-gray-400 mb-1">Enter 6-digit code to disable</label>
-                                            <div className="flex gap-2">
-                                                <input
-                                                    type="text"
-                                                    value={twoFactorCode}
-                                                    onChange={(e) => setTwoFactorCode(e.target.value)}
-                                                    maxLength={6}
-                                                    placeholder="000000"
-                                                    className="flex-1 px-4 py-2 rounded-lg bg-white/5 border border-white/10 outline-none focus:border-purple-500 text-center tracking-widest text-xl"
-                                                />
-                                                <button
-                                                    onClick={handleDisable2FA}
-                                                    disabled={twoFactorLoading || twoFactorCode.length !== 6}
-                                                    className="px-6 py-2 bg-red-600 hover:bg-red-700 rounded-lg font-medium transition-colors disabled:opacity-50"
-                                                >
-                                                    {twoFactorLoading ? "Disabling..." : "Disable 2FA"}
-                                                </button>
-                                            </div>
-                                        </div>
-                                    </div>
-                                )}
-                            </div>
-
-                            {/* Premium Membership Section */}
-                            <div className="p-8 rounded-2xl bg-gradient-to-br from-purple-900/50 via-pink-900/30 to-purple-900/50 border-2 border-purple-500/30 space-y-6 relative overflow-hidden">
-                                {/* Background decoration */}
-                                <div className="absolute top-0 right-0 w-64 h-64 bg-purple-500/10 rounded-full blur-3xl"></div>
-                                <div className="absolute bottom-0 left-0 w-64 h-64 bg-pink-500/10 rounded-full blur-3xl"></div>
-
-                                <div className="relative z-10">
-                                    <div className="flex items-center justify-between mb-4">
-                                        <div className="flex items-center gap-3">
-                                            <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl flex items-center justify-center">
-                                                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
-                                                </svg>
-                                            </div>
-                                            <div>
-                                                <h3 className="font-bold text-2xl text-white">Premium Membership</h3>
-                                                <p className="text-sm text-purple-300">Unlock the full power of CryptoMonitor</p>
-                                            </div>
-                                        </div>
-                                        {isPremium ? (
-                                            <span className="px-4 py-2 bg-gradient-to-r from-green-500 to-emerald-500 text-white font-bold rounded-full text-sm shadow-lg">
-                                                ✓ ACTIVE
-                                            </span>
-                                        ) : (
-                                            <span className="px-4 py-2 bg-slate-700/50 text-slate-300 font-bold rounded-full text-sm">
-                                                FREE TIER
-                                            </span>
-                                        )}
-                                    </div>
-
-                                    {!isPremium && (
-                                        <>
-                                            {/* Pricing */}
-                                            <div className="bg-black/30 backdrop-blur-sm rounded-xl p-6 mb-6 border border-purple-500/20">
-                                                <div className="text-center mb-4">
-                                                    <div className="text-5xl font-bold text-white mb-2">
-                                                        $29<span className="text-2xl text-gray-400">/month</span>
-                                                    </div>
-                                                    <p className="text-purple-300 text-sm">Pay with USDT (TRC20) • Cancel anytime</p>
-                                                </div>
-                                            </div>
-
-                                            {/* Features Comparison */}
-                                            <div className="grid md:grid-cols-2 gap-4 mb-6">
-                                                <div className="space-y-3">
-                                                    <div className="text-sm font-bold text-purple-300 uppercase tracking-wide mb-3">Free Tier</div>
-                                                    <div className="flex items-start gap-2 text-sm text-gray-400">
-                                                        <span className="text-red-400">✗</span>
-                                                        <span>1 Price Alert only</span>
-                                                    </div>
-                                                    <div className="flex items-start gap-2 text-sm text-gray-400">
-                                                        <span className="text-red-400">✗</span>
-                                                        <span>1 Wallet tracking only</span>
-                                                    </div>
-                                                    <div className="flex items-start gap-2 text-sm text-gray-400">
-                                                        <span className="text-red-400">✗</span>
-                                                        <span>Basic whale alerts</span>
-                                                    </div>
-                                                    <div className="flex items-start gap-2 text-sm text-gray-400">
-                                                        <span className="text-red-400">✗</span>
-                                                        <span>Email support only</span>
-                                                    </div>
-                                                </div>
-                                                <div className="space-y-3 bg-purple-500/10 rounded-lg p-4 border border-purple-500/30">
-                                                    <div className="text-sm font-bold text-purple-300 uppercase tracking-wide mb-3">Premium</div>
-                                                    <div className="flex items-start gap-2 text-sm text-white">
-                                                        <span className="text-green-400">✓</span>
-                                                        <span><strong>Unlimited</strong> price alerts</span>
-                                                    </div>
-                                                    <div className="flex items-start gap-2 text-sm text-white">
-                                                        <span className="text-green-400">✓</span>
-                                                        <span><strong>Unlimited</strong> wallet tracking</span>
-                                                    </div>
-                                                    <div className="flex items-start gap-2 text-sm text-white">
-                                                        <span className="text-green-400">✓</span>
-                                                        <span><strong>Real-time</strong> whale transaction alerts</span>
-                                                    </div>
-                                                    <div className="flex items-start gap-2 text-sm text-white">
-                                                        <span className="text-green-400">✓</span>
-                                                        <span><strong>Multi-chain</strong> support (ETH, BTC, SOL, BSC)</span>
-                                                    </div>
-                                                    <div className="flex items-start gap-2 text-sm text-white">
-                                                        <span className="text-green-400">✓</span>
-                                                        <span><strong>Advanced</strong> portfolio analytics</span>
-                                                    </div>
-                                                    <div className="flex items-start gap-2 text-sm text-white">
-                                                        <span className="text-green-400">✓</span>
-                                                        <span><strong>Priority</strong> Telegram notifications</span>
-                                                    </div>
-                                                    <div className="flex items-start gap-2 text-sm text-white">
-                                                        <span className="text-green-400">✓</span>
-                                                        <span><strong>24/7</strong> priority support</span>
-                                                    </div>
-                                                </div>
-                                            </div>
-
-                                            {/* CTA Button */}
-                                            <button
-                                                onClick={() => setShowModal("payment")}
-                                                className="w-full py-4 rounded-xl bg-gradient-to-r from-purple-600 via-pink-600 to-purple-600 hover:from-purple-500 hover:via-pink-500 hover:to-purple-500 font-bold text-lg transition-all shadow-2xl shadow-purple-500/50 hover:shadow-purple-500/70 transform hover:scale-[1.02]"
-                                            >
-                                                🚀 Upgrade to Premium Now
-                                            </button>
-                                            <p className="text-center text-xs text-gray-400 mt-3">
-                                                Secure payment via USDT (TRC20) • Instant activation
-                                            </p>
-                                        </>
-                                    )}
-
-                                    {isPremium && (
-                                        <div className="text-center py-8">
-                                            <div className="text-6xl mb-4">🎉</div>
-                                            <p className="text-xl text-white font-bold mb-2">You're a Premium Member!</p>
-                                            <p className="text-gray-300">Enjoy unlimited access to all features</p>
-                                        </div>
-                                    )}
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+                    <SettingsPage
+                        profileName={profileName}
+                        profileEmail={profileEmail}
+                        setProfileName={setProfileName}
+                        setProfileEmail={setProfileEmail}
+                        updateProfile={updateProfile}
+                        user={user}
+                        passwordChange={passwordChange}
+                        setPasswordChange={setPasswordChange}
+                        handleChangePassword={handleChangePassword}
+                        passwordError={passwordError}
+                        passwordSuccess={passwordSuccess}
+                        twoFactorQR={twoFactorQR}
+                        twoFactorCode={twoFactorCode}
+                        setTwoFactorCode={setTwoFactorCode}
+                        twoFactorError={twoFactorError}
+                        twoFactorSuccess={twoFactorSuccess}
+                        twoFactorLoading={twoFactorLoading}
+                        isTwoFactorEnabled={isTwoFactorEnabled}
+                        handleGenerate2FA={handleGenerate2FA}
+                        handleEnable2FA={handleEnable2FA}
+                        handleDisable2FA={handleDisable2FA}
+                        settings={settings}
+                        setSettings={setSettings}
+                        handleSaveSettings={handleSaveSettings}
+                        saveSuccess={saveSuccess}
+                        isPremium={isPremium}
+                        subscriptionInfo={subscriptionInfo}
+                        setShowModal={setShowModal}
+                    />
                 );
+
             case "Sentiment":
                 return <SentimentAnalysis />;
             case "Security":

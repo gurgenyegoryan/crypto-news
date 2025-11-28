@@ -32,6 +32,12 @@ export class AuthController {
         return userWithoutSensitiveData;
     }
 
+    @UseGuards(AuthGuard('jwt'))
+    @Post('profile')
+    async updateProfile(@Request() req: any, @Body() body: { name: string; email: string }) {
+        return this.authService.updateProfile(req.user.id, body.name, body.email);
+    }
+
     @Post('verify')
     async verify(@Body() body: { token: string }) {
         return this.authService.verifyEmail(body.token);

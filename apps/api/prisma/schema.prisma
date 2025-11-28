@@ -23,6 +23,7 @@ model User {
   isVerified              Boolean   @default(false) @map("is_verified")
   verificationToken       String?   @unique @map("verification_token")
   verificationTokenExpiry DateTime? @map("verification_token_expiry")
+  emailAlerts             Boolean   @default(false) @map("email_alerts")
 
   // 2FA
   twoFactorSecret    String?   @map("two_factor_secret")

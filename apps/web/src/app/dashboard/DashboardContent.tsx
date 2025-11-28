@@ -73,7 +73,7 @@ export default function DashboardContent() {
 
     // Settings state
     const [settings, setSettings] = useState({
-        emailNotifications: true,
+        emailAlerts: false,
         telegramAlerts: false,
         telegramChatId: ""
     });
@@ -128,8 +128,9 @@ export default function DashboardContent() {
             if (res.ok) {
                 const data = await res.json();
                 setIsPremium(data.tier === 'premium');
+                setIsTwoFactorEnabled(data.isTwoFactorEnabled || false);
                 setSettings({
-                    emailNotifications: true,
+                    emailAlerts: data.emailAlerts || false,
                     telegramAlerts: !!data.telegramId,
                     telegramChatId: data.telegramId || ""
                 });
@@ -423,7 +424,8 @@ export default function DashboardContent() {
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
-                    telegramId: settings.telegramAlerts ? settings.telegramChatId : null
+                    telegramId: settings.telegramAlerts ? settings.telegramChatId : null,
+                    emailAlerts: settings.emailAlerts
                 })
             });
 

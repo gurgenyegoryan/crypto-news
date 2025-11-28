@@ -31,7 +31,11 @@ interface SettingsPageProps {
     handleDisable2FA: () => void;
 
     // Settings/Notifications
-    settings: { telegramAlerts: boolean; telegramChatId: string };
+    settings: {
+        emailAlerts: boolean;
+        telegramAlerts: boolean;
+        telegramChatId: string;
+    };
     setSettings: (settings: any) => void;
     handleSaveSettings: () => void;
     saveSuccess: boolean;
@@ -429,6 +433,32 @@ export default function SettingsPage(props: SettingsPageProps) {
                 {/* Notifications Tab */}
                 {activeTab === 'notifications' && (
                     <div className="space-y-6 animate-fadeIn">
+                        {/* Email Notifications */}
+                        <div className="p-6 rounded-2xl bg-white/5 border border-white/10">
+                            <div className="flex items-center justify-between mb-6">
+                                <div>
+                                    <h3 className="font-bold text-xl mb-1">Email Notifications</h3>
+                                    <p className="text-sm text-gray-400">
+                                        Receive alerts and updates via email
+                                    </p>
+                                </div>
+                                <button
+                                    onClick={async () => {
+                                        const newValue = !settings.emailAlerts;
+                                        setSettings({ ...settings, emailAlerts: newValue });
+
+                                        // Wait for state update, then save
+                                        setTimeout(async () => {
+                                            await handleSaveSettings();
+                                        }, 100);
+                                    }}
+                                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${settings.emailAlerts ? 'bg-purple-600' : 'bg-gray-600'}`}
+                                >
+                                    <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${settings.emailAlerts ? 'translate-x-6' : 'translate-x-1'}`} />
+                                </button>
+                            </div>
+                        </div>
+
                         <div className="p-6 rounded-2xl bg-white/5 border border-white/10">
                             <div className="flex items-center justify-between mb-6">
                                 <div>
@@ -439,7 +469,17 @@ export default function SettingsPage(props: SettingsPageProps) {
                                 </div>
                                 {isPremium ? (
                                     <button
-                                        onClick={() => setSettings({ ...settings, telegramAlerts: !settings.telegramAlerts })}
+                                        onClick={async () => {
+                                            const newValue = !settings.telegramAlerts;
+                                            setSettings({ ...settings, telegramAlerts: newValue });
+
+                                            // Auto-save when disabling
+                                            if (!newValue) {
+                                                setTimeout(async () => {
+                                                    await handleSaveSettings();
+                                                }, 100);
+                                            }
+                                        }}
                                         className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${settings.telegramAlerts ? 'bg-purple-600' : 'bg-gray-600'}`}
                                     >
                                         <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${settings.telegramAlerts ? 'translate-x-6' : 'translate-x-1'}`} />

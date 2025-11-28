@@ -5,9 +5,10 @@ import { WhaleAlertController } from './whale-alert.controller';
 import { WhaleAlertService } from './whale-alert.service';
 import { PrismaModule } from '../prisma/prisma.module';
 import { BlockchainModule } from '../blockchain/blockchain.module';
+import { EmailModule } from '../email/email.module';
 
 @Module({
-    imports: [PrismaModule, BlockchainModule],
+    imports: [PrismaModule, BlockchainModule, EmailModule],
     controllers: [WhaleWatchController, WhaleAlertController],
     providers: [WhaleWatchService, WhaleAlertService],
     exports: [WhaleWatchService, WhaleAlertService],

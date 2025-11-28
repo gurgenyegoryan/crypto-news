@@ -21,7 +21,7 @@ export class UsersController {
     @Patch('me')
     async updateProfile(
         @Request() req: any,
-        @Body() body: { name?: string; email?: string; telegramId?: string | null }
+        @Body() body: { name?: string; email?: string; telegramId?: string | null; emailAlerts?: boolean }
     ) {
         const userId = req.user.id;
 
@@ -33,6 +33,7 @@ export class UsersController {
         // For safety in this task, I'll allow it as per plan.
         if (body.email !== undefined) updateData.email = body.email;
         if (body.telegramId !== undefined) updateData.telegramId = body.telegramId;
+        if (body.emailAlerts !== undefined) updateData.emailAlerts = body.emailAlerts;
 
         const updatedUser = await this.usersService.update(userId, updateData);
         const { password, verificationToken, verificationTokenExpiry, ...result } = updatedUser;

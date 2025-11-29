@@ -37,7 +37,7 @@ interface SettingsPageProps {
         telegramChatId: string;
     };
     setSettings: (settings: any) => void;
-    handleSaveSettings: () => void;
+    updateSettings: (settings: any) => void;
     saveSuccess: boolean;
     isPremium: boolean;
 
@@ -57,7 +57,7 @@ export default function SettingsPage(props: SettingsPageProps) {
         passwordChange, setPasswordChange, handleChangePassword, passwordError, passwordSuccess,
         twoFactorQR, twoFactorCode, setTwoFactorCode, twoFactorError, twoFactorSuccess,
         twoFactorLoading, isTwoFactorEnabled, handleGenerate2FA, handleEnable2FA, handleDisable2FA,
-        settings, setSettings, handleSaveSettings, saveSuccess, isPremium,
+        settings, setSettings, updateSettings, saveSuccess, isPremium,
         subscriptionInfo, setShowModal
     } = props;
 
@@ -443,15 +443,7 @@ export default function SettingsPage(props: SettingsPageProps) {
                                     </p>
                                 </div>
                                 <button
-                                    onClick={async () => {
-                                        const newValue = !settings.emailAlerts;
-                                        setSettings({ ...settings, emailAlerts: newValue });
-
-                                        // Wait for state update, then save
-                                        setTimeout(async () => {
-                                            await handleSaveSettings();
-                                        }, 100);
-                                    }}
+                                    onClick={() => updateSettings({ emailAlerts: !settings.emailAlerts })}
                                     className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${settings.emailAlerts ? 'bg-purple-600' : 'bg-gray-600'}`}
                                 >
                                     <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${settings.emailAlerts ? 'translate-x-6' : 'translate-x-1'}`} />
@@ -469,17 +461,7 @@ export default function SettingsPage(props: SettingsPageProps) {
                                 </div>
                                 {isPremium ? (
                                     <button
-                                        onClick={async () => {
-                                            const newValue = !settings.telegramAlerts;
-                                            setSettings({ ...settings, telegramAlerts: newValue });
-
-                                            // Auto-save when disabling
-                                            if (!newValue) {
-                                                setTimeout(async () => {
-                                                    await handleSaveSettings();
-                                                }, 100);
-                                            }
-                                        }}
+                                        onClick={() => updateSettings({ telegramAlerts: !settings.telegramAlerts })}
                                         className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${settings.telegramAlerts ? 'bg-purple-600' : 'bg-gray-600'}`}
                                     >
                                         <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${settings.telegramAlerts ? 'translate-x-6' : 'translate-x-1'}`} />
@@ -507,7 +489,7 @@ export default function SettingsPage(props: SettingsPageProps) {
                                                 className="flex-1 px-4 py-3 rounded-lg bg-black/50 border border-white/10 focus:border-purple-500 outline-none transition-colors"
                                             />
                                             <button
-                                                onClick={handleSaveSettings}
+                                                onClick={() => updateSettings({ telegramChatId: settings.telegramChatId })}
                                                 className="px-6 py-3 bg-purple-600 hover:bg-purple-500 rounded-lg font-bold transition-all"
                                             >
                                                 {saveSuccess ? "Saved!" : "Save"}

@@ -25,11 +25,14 @@ export default function SentimentAnalysis() {
     const fetchSentiment = async () => {
         setLoading(true);
         try {
-            const response = await fetch(`http://localhost:3000/sentiment/${selectedToken}`);
+            const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
+            const response = await fetch(`${apiUrl}/sentiment/${selectedToken}`);
+            if (!response.ok) throw new Error('Failed to fetch sentiment');
             const data = await response.json();
             setSentiment(data);
         } catch (error) {
             console.error('Error fetching sentiment:', error);
+            setSentiment(null);
         } finally {
             setLoading(false);
         }
@@ -37,11 +40,14 @@ export default function SentimentAnalysis() {
 
     const fetchHistory = async () => {
         try {
-            const response = await fetch(`http://localhost:3000/sentiment/${selectedToken}/history?hours=24`);
+            const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
+            const response = await fetch(`${apiUrl}/sentiment/${selectedToken}/history?hours=24`);
+            if (!response.ok) throw new Error('Failed to fetch history');
             const data = await response.json();
             setHistory(data);
         } catch (error) {
             console.error('Error fetching history:', error);
+            setHistory([]);
         }
     };
 

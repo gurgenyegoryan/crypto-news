@@ -50,4 +50,11 @@ export class SentimentController {
     async deleteAlert(@Request() req: any, @Param('id') id: string) {
         return this.sentimentService.deleteAlert(req.user.id, id);
     }
+
+    @UseGuards(AuthGuard('jwt'))
+    @Post('analyze')
+    async analyzeToken(@Body() body: { token: string }) {
+        await this.sentimentService.analyzeRedditSentiment(body.token);
+        return this.sentimentService.getCurrentSentiment(body.token);
+    }
 }

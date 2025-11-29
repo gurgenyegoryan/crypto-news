@@ -85,6 +85,7 @@ export class SentimentService {
                         headers: {
                             'User-Agent': 'CryptoMonitor/1.0',
                         },
+                        timeout: 5000 // 5s timeout
                     });
 
                     if (response.data && response.data.data && response.data.data.children) {
@@ -96,15 +97,14 @@ export class SentimentService {
 
                             // Simple sentiment analysis based on score/upvotes
                             const upvoteRatio = data.upvote_ratio || 0.5;
-                            const score = data.score || 0;
-
                             // Normalize to -1 to 1 range
                             const sentimentScore = (upvoteRatio - 0.5) * 2;
                             totalScore += sentimentScore;
                         }
                     }
                 } catch (err) {
-                    console.error(`Error fetching from r/${subreddit}:`, err.message);
+                    // Log but continue to next subreddit
+                    console.warn(`[Sentiment] Warning fetching from r/${subreddit}: ${err.message}`);
                 }
             }
 
@@ -127,9 +127,23 @@ export class SentimentService {
                 });
 
                 console.log(`[Sentiment] Analyzed ${totalPosts} Reddit posts for ${token}: ${avgScore.toFixed(2)}`);
+            } else {
+                console.log(`[Sentiment] No posts found for ${token}, creating neutral entry`);
+                // Create a neutral entry so we have something to show
+                await this.prisma.sentimentData.create({
+                    data: {
+                        token: token.toUpperCase(),
+                        score: 0,
+                        volume: 0,
+                        source: 'reddit',
+                        timestamp: new Date(),
+                        metadata: { note: 'No data found, default neutral' },
+                    },
+                });
             }
         } catch (error) {
             console.error(`[Sentiment] Error analyzing Reddit for ${token}:`, error.message);
+            throw error;
         }
     }
 

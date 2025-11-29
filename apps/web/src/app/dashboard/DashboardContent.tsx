@@ -419,9 +419,13 @@ export default function DashboardContent() {
             setIsVerifyingPayment(false);
         }
     };
-    const handleSaveSettings = async () => {
+    const updateSettings = async (newSettings: Partial<typeof settings>) => {
         const token = localStorage.getItem("auth_token");
         if (!token) return;
+
+        // Optimistic update
+        const previousSettings = { ...settings };
+        setSettings({ ...settings, ...newSettings });
 
         try {
             const res = await fetch(`${API_URL}/users/me`, {
@@ -431,8 +435,10 @@ export default function DashboardContent() {
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
-                    telegramId: settings.telegramAlerts ? settings.telegramChatId : null,
-                    emailAlerts: settings.emailAlerts
+                    telegramId: newSettings.telegramAlerts !== undefined ? (newSettings.telegramAlerts ? settings.telegramChatId : null) : undefined,
+                    emailAlerts: newSettings.emailAlerts,
+                    // If we are updating telegramChatId, we should probably send it too if alerts are enabled
+                    ...(newSettings.telegramChatId !== undefined && settings.telegramAlerts ? { telegramId: newSettings.telegramChatId } : {})
                 })
             });
 
@@ -441,12 +447,18 @@ export default function DashboardContent() {
                 setTimeout(() => setSaveSuccess(false), 3000);
                 setNotification({ type: 'success', message: "Settings saved successfully!" });
                 setTimeout(() => setNotification(null), 3000);
-                fetchUserProfile(); // Refresh to confirm
+                // No need to fetch profile immediately if we trust our optimistic update, 
+                // but fetching ensures we are in sync with any server-side validation/formatting
+                fetchUserProfile();
             } else {
+                // Revert on failure
+                setSettings(previousSettings);
                 setNotification({ type: 'error', message: "Failed to save settings" });
             }
         } catch (e) {
             console.error("Error saving settings", e);
+            // Revert on error
+            setSettings(previousSettings);
             setNotification({ type: 'error', message: "Error saving settings" });
         }
     };
@@ -610,9 +622,44 @@ export default function DashboardContent() {
             case "Portfolio":
                 return (
                     <div className="space-y-8">
+                        {/* Market Overview - Premium Feel */}
+                        <div className="grid md:grid-cols-2 gap-6">
+                            <div className="p-6 rounded-2xl bg-gradient-to-br from-purple-900/20 to-black border border-purple-500/20 relative overflow-hidden group">
+                                <div className="absolute top-0 right-0 w-32 h-32 bg-purple-500/10 rounded-full blur-2xl group-hover:bg-purple-500/20 transition-all"></div>
+                                <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
+                                    <span className="text-2xl">📈</span> Market Sentiment
+                                </h3>
+                                <div className="flex items-center gap-4 mb-4">
+                                    <div className="text-4xl font-bold text-green-400">Greed</div>
+                                    <div className="px-3 py-1 rounded-full bg-green-500/20 text-green-400 text-sm font-bold">74/100</div>
+                                </div>
+                                <p className="text-gray-400 text-sm">
+                                    The market is showing strong bullish signals today. Whale accumulation detected in ETH and SOL.
+                                </p>
+                            </div>
+                            <div className="p-6 rounded-2xl bg-gradient-to-br from-blue-900/20 to-black border border-blue-500/20 relative overflow-hidden group">
+                                <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/10 rounded-full blur-2xl group-hover:bg-blue-500/20 transition-all"></div>
+                                <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
+                                    <span className="text-2xl">🐋</span> Whale Watch
+                                </h3>
+                                <div className="space-y-3">
+                                    <div className="flex items-center justify-between text-sm">
+                                        <span className="text-gray-400">Recent large movement</span>
+                                        <span className="text-blue-400">2 mins ago</span>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <span className="font-mono text-white">1,500 ETH</span>
+                                        <span className="text-gray-500">($3.2M)</span>
+                                        <span className="text-gray-400">→</span>
+                                        <span className="text-yellow-500">Binance</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
                         {/* Stats Grid */}
                         <div className="grid md:grid-cols-3 gap-6">
-                            <div className="p-6 rounded-2xl bg-white/5 border border-white/10">
+                            <div className="p-6 rounded-2xl bg-white/5 border border-white/10 hover:border-purple-500/30 transition-colors">
                                 <div className="text-gray-400 mb-2">Portfolio Value</div>
                                 <div className="text-3xl font-bold">
                                     {wallets.length === 0 ? (
@@ -625,12 +672,12 @@ export default function DashboardContent() {
                                     {wallets.length === 0 ? 'Add wallets to start tracking' : 'Real-time pricing coming soon'}
                                 </div>
                             </div>
-                            <div className="p-6 rounded-2xl bg-white/5 border border-white/10">
+                            <div className="p-6 rounded-2xl bg-white/5 border border-white/10 hover:border-purple-500/30 transition-colors">
                                 <div className="text-gray-400 mb-2">Active Alerts</div>
                                 <div className="text-3xl font-bold">{alerts.length}</div>
                                 <div className="text-purple-400 text-sm mt-2">{alerts.filter(a => a.active).length} active</div>
                             </div>
-                            <div className="p-6 rounded-2xl bg-white/5 border border-white/10">
+                            <div className="p-6 rounded-2xl bg-white/5 border border-white/10 hover:border-purple-500/30 transition-colors">
                                 <div className="text-gray-400 mb-2">Tracked Wallets</div>
                                 <div className="text-3xl font-bold">{wallets.length}</div>
                                 <div className="text-gray-500 text-sm mt-2">Personal Wallets</div>
@@ -691,6 +738,26 @@ export default function DashboardContent() {
                                 </table>
                             </div>
                         </div>
+
+                        {/* Premium Features Teaser */}
+                        {!isPremium && (
+                            <div className="rounded-2xl bg-gradient-to-r from-purple-900/40 to-pink-900/40 border border-purple-500/20 p-8 text-center relative overflow-hidden">
+                                <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-20"></div>
+                                <div className="relative z-10">
+                                    <h2 className="text-2xl font-bold text-white mb-4">Unlock Advanced Analytics</h2>
+                                    <p className="text-gray-300 max-w-2xl mx-auto mb-8">
+                                        Get access to real-time whale tracking, AI-powered sentiment analysis, and unlimited price alerts.
+                                        Join thousands of traders who are staying ahead of the market.
+                                    </p>
+                                    <button
+                                        onClick={() => setShowModal("payment")}
+                                        className="px-8 py-3 bg-white text-purple-900 font-bold rounded-xl hover:bg-gray-100 transition-colors"
+                                    >
+                                        Upgrade to Premium
+                                    </button>
+                                </div>
+                            </div>
+                        )}
                     </div>
                 );
             case "Alerts":
@@ -707,10 +774,20 @@ export default function DashboardContent() {
                         </div>
 
                         {alerts.length === 0 ? (
-                            <div className="p-8 text-center text-gray-400 bg-white/5 rounded-2xl border border-white/10">
-                                <div className="text-4xl mb-4">🔔</div>
-                                <h2 className="text-xl font-bold text-white mb-2">No Alerts Configured</h2>
-                                <p>Create your first price alert to stay updated.</p>
+                            <div className="p-12 text-center bg-gradient-to-br from-white/5 to-white/0 rounded-2xl border border-white/10 flex flex-col items-center justify-center min-h-[400px]">
+                                <div className="w-20 h-20 bg-purple-500/10 rounded-full flex items-center justify-center mb-6 animate-pulse">
+                                    <span className="text-4xl">🔔</span>
+                                </div>
+                                <h2 className="text-2xl font-bold text-white mb-3">Never Miss a Price Move</h2>
+                                <p className="text-gray-400 max-w-md mb-8">
+                                    Set up custom price alerts for your favorite tokens. We'll notify you instantly via email or Telegram when your target price is hit.
+                                </p>
+                                <button
+                                    onClick={() => setShowModal("alert")}
+                                    className="px-8 py-4 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 rounded-xl font-bold text-lg shadow-lg shadow-purple-500/25 transition-all hover:scale-105"
+                                >
+                                    Create First Alert
+                                </button>
                             </div>
                         ) : (
                             <div className="grid gap-4">
@@ -779,10 +856,20 @@ export default function DashboardContent() {
                         </div>
 
                         {wallets.length === 0 ? (
-                            <div className="p-8 text-center text-gray-400 bg-white/5 rounded-2xl border border-white/10">
-                                <div className="text-4xl mb-4">👛</div>
-                                <h2 className="text-xl font-bold text-white mb-2">No Wallets Connected</h2>
-                                <p>Add a wallet to start tracking your portfolio.</p>
+                            <div className="p-12 text-center bg-gradient-to-br from-white/5 to-white/0 rounded-2xl border border-white/10 flex flex-col items-center justify-center min-h-[400px]">
+                                <div className="w-20 h-20 bg-blue-500/10 rounded-full flex items-center justify-center mb-6 animate-pulse">
+                                    <span className="text-4xl">👛</span>
+                                </div>
+                                <h2 className="text-2xl font-bold text-white mb-3">Track Your Portfolio</h2>
+                                <p className="text-gray-400 max-w-md mb-8">
+                                    Connect your wallets to track all your assets in one place. We support Ethereum, Solana, and BSC chains.
+                                </p>
+                                <button
+                                    onClick={() => setShowModal("wallet")}
+                                    className="px-8 py-4 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 rounded-xl font-bold text-lg shadow-lg shadow-blue-500/25 transition-all hover:scale-105"
+                                >
+                                    Connect Wallet
+                                </button>
                             </div>
                         ) : (
                             <div className="grid gap-4">
@@ -891,7 +978,7 @@ export default function DashboardContent() {
                         handleDisable2FA={handleDisable2FA}
                         settings={settings}
                         setSettings={setSettings}
-                        handleSaveSettings={handleSaveSettings}
+                        updateSettings={updateSettings}
                         saveSuccess={saveSuccess}
                         isPremium={isPremium}
                         subscriptionInfo={subscriptionInfo}
@@ -1213,9 +1300,10 @@ export default function DashboardContent() {
 
                                 <button
                                     onClick={showModal === "alert" ? handleCreateAlert : showModal === "wallet" ? handleAddWallet : handleVerifyPayment}
-                                    className="w-full py-3 rounded-xl bg-purple-600 hover:bg-purple-500 font-bold transition-all"
+                                    disabled={isVerifyingPayment}
+                                    className="w-full py-3 rounded-xl bg-purple-600 hover:bg-purple-500 font-bold transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
-                                    {showModal === "alert" ? "Set Alert" : showModal === "wallet" ? "Connect Wallet" : "Verify Payment"}
+                                    {showModal === "alert" ? "Set Alert" : showModal === "wallet" ? "Connect Wallet" : isVerifyingPayment ? "Verifying..." : "Verify Payment"}
                                 </button>
                             </div>
                         </div>

@@ -5,12 +5,12 @@ echo ""
 
 # Stop containers
 echo "1️⃣ Stopping containers..."
-docker-compose down
+docker compose down
 
 # Rebuild and start
 echo ""
 echo "2️⃣ Building and starting containers..."
-docker-compose up --build -d
+docker compose up --build -d
 
 # Wait for containers to be ready
 echo ""
@@ -20,7 +20,7 @@ sleep 10
 # Show status
 echo ""
 echo "4️⃣ Container status:"
-docker-compose ps
+docker compose ps
 
 echo ""
 echo "✅ Done! New code is now deployed."

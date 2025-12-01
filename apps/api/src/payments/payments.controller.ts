@@ -1,4 +1,4 @@
-import { Controller, Post, Get, Body, UseGuards, Request } from '@nestjs/common';
+import { Controller, Post, Get, Body, UseGuards, Request, BadRequestException } from '@nestjs/common';
 import { PaymentsService } from './payments.service';
 import { AuthGuard } from '@nestjs/passport';
 import { VerifyPaymentDto } from './dto/verify-payment.dto';
@@ -9,8 +9,12 @@ export class PaymentsController {
     constructor(private readonly paymentsService: PaymentsService) { }
 
     @Post('verify')
-    verifyPayment(@Request() req: any, @Body() body: VerifyPaymentDto) {
-        return this.paymentsService.verifyPayment(req.user.id, body.txHash, body.network);
+    async verifyPayment(@Request() req: any, @Body() body: VerifyPaymentDto) {
+        const result = await this.paymentsService.verifyPayment(req.user.id, body.txHash, body.network);
+        if (!result.success) {
+            throw new BadRequestException(result.message);
+        }
+        return result;
     }
 
     @Get('subscription-status')

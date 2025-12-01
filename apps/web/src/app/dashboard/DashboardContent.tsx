@@ -404,7 +404,7 @@ export default function DashboardContent() {
 
             const data = await res.json();
 
-            if (res.ok) {
+            if (res.ok && data.success) {
                 setNotification({ type: 'success', message: data.message });
                 setIsPremium(true);
                 setShowModal(null);

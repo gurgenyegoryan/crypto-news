@@ -29,6 +29,10 @@ model User {
   twoFactorSecret    String?   @map("two_factor_secret")
   isTwoFactorEnabled Boolean   @default(false) @map("is_two_factor_enabled")
 
+  // Password Reset
+  passwordResetToken       String?   @unique @map("password_reset_token")
+  passwordResetTokenExpiry DateTime? @map("password_reset_token_expiry")
+
   // Subscription management
   premiumUntil       DateTime? @map("premium_until")
   lastPaymentDate    DateTime? @map("last_payment_date")

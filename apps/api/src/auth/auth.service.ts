@@ -248,4 +248,59 @@ export class AuthService {
         const { password, verificationToken, verificationTokenExpiry, twoFactorSecret, ...result } = user;
         return result;
     }
+
+    // === Password Reset Methods ===
+
+    async forgotPassword(email: string) {
+        const user = await this.usersService.findOne(email);
+
+        // Don't reveal if user exists or not for security
+        if (!user) {
+            return { message: 'If an account exists with this email, a password reset link has been sent.' };
+        }
+
+        // Only send reset email to verified accounts
+        if (!user.isVerified) {
+            throw new BadRequestException('Please verify your email address first before resetting password.');
+        }
+
+        // Generate reset token
+        const resetToken = randomBytes(32).toString('hex');
+        const resetTokenExpiry = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
+
+        // Save token to database
+        await this.usersService.update(user.id, {
+            passwordResetToken: resetToken,
+            passwordResetTokenExpiry: resetTokenExpiry,
+        });
+
+        // Send reset email
+        await this.emailService.sendPasswordResetEmail(email, resetToken);
+
+        return { message: 'If an account exists with this email, a password reset link has been sent.' };
+    }
+
+    async resetPassword(token: string, newPassword: string) {
+        const user = await this.usersService.findByPasswordResetToken(token);
+
+        if (!user) {
+            throw new BadRequestException('Invalid or expired reset token');
+        }
+
+        if (user.passwordResetTokenExpiry && user.passwordResetTokenExpiry < new Date()) {
+            throw new BadRequestException('Reset token has expired. Please request a new one.');
+        }
+
+        // Hash new password
+        const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+        // Update password and clear reset token
+        await this.usersService.update(user.id, {
+            password: hashedPassword,
+            passwordResetToken: null,
+            passwordResetTokenExpiry: null,
+        });
+
+        return { message: 'Password reset successfully. You can now login with your new password.' };
+    }
 }

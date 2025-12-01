@@ -74,4 +74,16 @@ export class AuthController {
     async disable2FA(@Request() req: any, @Body() body: { code: string }) {
         return this.authService.disable2FA(req.user.id, body.code);
     }
+
+    // === Password Reset Endpoints ===
+
+    @Post('forgot-password')
+    async forgotPassword(@Body() body: { email: string }) {
+        return this.authService.forgotPassword(body.email);
+    }
+
+    @Post('reset-password')
+    async resetPassword(@Body() body: { token: string; newPassword: string }) {
+        return this.authService.resetPassword(body.token, body.newPassword);
+    }
 }

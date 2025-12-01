@@ -8,8 +8,9 @@ const TEST_USER = {
     password: 'Password123!',
 };
 
-// Your transaction hash from sending 29 USDT to TSWJ1i1z4aDDsDvC1N6A6UgRteJabtuo29
+// Your transaction hash
 const TX_HASH = 'YOUR_TRANSACTION_HASH_HERE';
+const NETWORK = 'POLYGON'; // 'TRC20' or 'POLYGON'
 
 async function testPayment() {
     console.log('\n💳 ========================================');
@@ -38,13 +39,13 @@ async function testPayment() {
         // Step 3: Verify payment
         console.log('💰 Step 3: Verifying payment...');
         console.log('   Transaction hash:', TX_HASH);
-        console.log('   Expected wallet: TSWJ1i1z4aDDsDvC1N6A6UgRteJabtuo29');
-        console.log('   Expected amount: 1 USDT (TRC20)');
+        console.log('   Network:', NETWORK);
+        console.log('   Expected amount: 1 USDT');
         console.log('');
 
         const verifyRes = await axios.post(
             `${API_URL}/payments/verify`,
-            { txHash: TX_HASH },
+            { txHash: TX_HASH, network: NETWORK },
             {
                 headers: { Authorization: `Bearer ${authToken}` },
             }

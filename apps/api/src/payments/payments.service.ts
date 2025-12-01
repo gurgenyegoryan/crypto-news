@@ -5,11 +5,12 @@ import { PrismaService } from '../prisma/prisma.service';
 export class PaymentsService {
     private readonly logger = new Logger(PaymentsService.name);
     private readonly ADMIN_WALLET_TRC20 = process.env.ADMIN_USDT_WALLET || 'TSWJ1i1z4aDDsDvC1N6A6UgRteJabtuo29';
+    private readonly ADMIN_WALLET_POLYGON = '0x9c4c8f7c057f459c62add15c7330f2a3060479a4';
     private readonly MONTHLY_PRICE_USD = 1;
 
     constructor(private prisma: PrismaService) { }
 
-    async verifyPayment(userId: string, txHash: string) {
+    async verifyPayment(userId: string, txHash: string, network: string = 'TRC20') {
         try {
             // Check if this transaction hash was already used
             const existingPayment = await this.prisma.payment.findUnique({
@@ -71,7 +72,7 @@ export class PaymentsService {
                     txHash,
                     amount: this.MONTHLY_PRICE_USD,
                     currency: 'USDT',
-                    network: 'TRC20',
+                    network: network,
                     status: 'verified',
                     subscriptionMonths: 1,
                     verifiedAt: new Date(),

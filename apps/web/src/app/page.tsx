@@ -204,7 +204,7 @@ export default function Home() {
                   <span className="text-purple-400 group-open:rotate-180 transition-transform">▼</span>
                 </summary>
                 <p className="mt-4 text-gray-400 leading-relaxed">
-                  We accept USDT (TRC20) for Premium subscriptions. Simply send $1 USDT to our wallet address and submit your transaction hash for instant activation.
+                  We accept USDT (TRC20 or Polygon) for Premium subscriptions. Simply send $1 USDT to our wallet address and submit your transaction hash for instant activation.
                 </p>
               </details>
 

@@ -10,7 +10,7 @@ export class PaymentsController {
 
     @Post('verify')
     verifyPayment(@Request() req: any, @Body() body: VerifyPaymentDto) {
-        return this.paymentsService.verifyPayment(req.user.id, body.txHash);
+        return this.paymentsService.verifyPayment(req.user.id, body.txHash, body.network);
     }
 
     @Get('subscription-status')

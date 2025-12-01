@@ -372,7 +372,7 @@ export default function SettingsPage(props: SettingsPageProps) {
                                                 <div className="text-5xl font-bold text-white mb-2">
                                                     $1<span className="text-2xl text-gray-400">/month</span>
                                                 </div>
-                                                <p className="text-purple-300 text-sm">Pay with USDT (TRC20) • Cancel anytime</p>
+                                                <p className="text-purple-300 text-sm">Pay with USDT (TRC20 or Polygon) • Cancel anytime</p>
                                             </div>
                                         </div>
                                         <div className="grid gap-3">

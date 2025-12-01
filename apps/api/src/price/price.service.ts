@@ -154,6 +154,12 @@ export class PriceService {
      * Start periodic price updates for popular tokens
      */
     private startPriceUpdates() {
+        // Don't run price updates in worker to avoid duplication
+        if (process.env.IS_WORKER === 'true') {
+            this.logger.log('Worker mode detected: Skipping price update service');
+            return;
+        }
+
         const popularTokens = ['BTC', 'ETH', 'BNB', 'SOL', 'XRP', 'ADA', 'DOGE', 'DOT'];
 
         // Fetch prices immediately on startup

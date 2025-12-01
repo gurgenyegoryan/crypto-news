@@ -44,20 +44,27 @@ export default function LivePriceTicker() {
                 {/* Duplicate list for seamless scrolling effect */}
                 {[...tokens, ...tokens].map((token, i) => {
                     const data = prices.get(token);
-                    const price = data?.price || 0;
-                    const isPositive = (data?.change24h || 0) >= 0;
+
+                    if (!data) {
+                        return (
+                            <div key={`${token}-${i}`} className="flex items-center gap-2 text-sm">
+                                <span className="font-bold text-gray-300">{token}</span>
+                                <span className="text-gray-600 text-xs">Loading...</span>
+                            </div>
+                        );
+                    }
+
+                    const price = data.price;
+                    const isPositive = (data.change24h || 0) >= 0;
 
                     return (
                         <div key={`${token}-${i}`} className="flex items-center gap-2 text-sm">
                             <span className="font-bold text-gray-300">{token}</span>
                             <span className="text-white font-mono">${price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 4 })}</span>
-                            {data && (
-                                <span className={`flex items-center text-xs ${isPositive ? 'text-green-400' : 'text-red-400'}`}>
-                                    {isPositive ? <TrendingUp className="w-3 h-3 mr-1" /> : <TrendingDown className="w-3 h-3 mr-1" />}
-                                    {Math.abs(data.change24h).toFixed(2)}%
-                                </span>
-                            )}
-                            {!data && <span className="text-gray-600 text-xs">Loading...</span>}
+                            <span className={`flex items-center text-xs ${isPositive ? 'text-green-400' : 'text-red-400'}`}>
+                                {isPositive ? <TrendingUp className="w-3 h-3 mr-1" /> : <TrendingDown className="w-3 h-3 mr-1" />}
+                                {Math.abs(data.change24h).toFixed(2)}%
+                            </span>
                         </div>
                     );
                 })}

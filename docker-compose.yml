@@ -68,7 +68,7 @@ services:
       context: ./apps/web
       dockerfile: Dockerfile
       args:
-        NEXT_PUBLIC_API_URL: http://localhost:3000
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:3000}
     container_name: cryptomonitor-web
     dns:
       - 8.8.8.8
@@ -76,7 +76,7 @@ services:
     depends_on:
       - api
     environment:
-      NEXT_PUBLIC_API_URL: http://localhost:3000
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:3000}
     ports:
       - "3001:3000"
 
@@ -99,6 +99,7 @@ services:
       redis:
         condition: service_healthy
     environment:
+      IS_WORKER: 'true'
       DATABASE_URL: postgres://${DB_USER:-postgres}:${DB_PASSWORD:-postgres}@postgres:5432/${DB_NAME:-cryptomonitor}
       REDIS_HOST: redis
       REDIS_PORT: 6379

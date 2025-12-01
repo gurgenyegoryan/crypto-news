@@ -2,6 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { PriceService } from '../price/price.service';
 import { TelegramService } from '../telegram/telegram.service';
+import { EmailService } from '../email/email.service';
 
 @Injectable()
 export class AlertCheckerService {
@@ -11,6 +12,7 @@ export class AlertCheckerService {
         private prisma: PrismaService,
         private priceService: PriceService,
         private telegramService: TelegramService,
+        private emailService: EmailService,
     ) { }
 
     async checkAlerts(): Promise<void> {
@@ -77,7 +79,30 @@ export class AlertCheckerService {
                             alert.type
                         );
                     } else {
-                        this.logger.warn(`User ${alert.user.email} has no Telegram ID, cannot send notification`);
+                        this.logger.warn(`User ${alert.user.email} has no Telegram ID, cannot send Telegram notification`);
+                    }
+
+                    // Send email notification if user has email alerts enabled
+                    const user = await this.prisma.user.findUnique({
+                        where: { id: alert.user.id },
+                        select: { emailAlerts: true },
+                    });
+
+                    if (user?.emailAlerts) {
+                        try {
+                            await this.emailService.sendWhaleAlert(alert.user.email, {
+                                token: alert.token,
+                                amount: `${priceValue}`,
+                                valueUsd: `$${priceValue.toFixed(2)}`,
+                                from: 'Price Alert',
+                                to: `Target: $${targetPrice}`,
+                            });
+                            this.logger.log(`Email alert sent to ${alert.user.email}`);
+                        } catch (error) {
+                            this.logger.error(`Failed to send email alert to ${alert.user.email}`, error);
+                        }
+                    } else {
+                        this.logger.log(`User ${alert.user.email} has email alerts disabled`);
                     }
 
                     // Deactivate the alert so it doesn't trigger again

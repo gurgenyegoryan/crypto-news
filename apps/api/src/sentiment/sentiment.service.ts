@@ -85,7 +85,7 @@ export class SentimentService {
                         headers: {
                             'User-Agent': 'CryptoMonitor/1.0',
                         },
-                        timeout: 5000 // 5s timeout
+                        timeout: 3000 // 3s timeout
                     });
 
                     if (response.data && response.data.data && response.data.data.children) {
@@ -104,7 +104,7 @@ export class SentimentService {
                     }
                 } catch (err) {
                     // Log but continue to next subreddit
-                    console.warn(`[Sentiment] Warning fetching from r/${subreddit}: ${err.message}`);
+                    // console.warn(`[Sentiment] Warning fetching from r/${subreddit}: ${err.message}`);
                 }
             }
 

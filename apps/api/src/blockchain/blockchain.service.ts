@@ -38,10 +38,18 @@ export class BlockchainService {
         private realtimeGateway: RealtimeGateway,
         private priceService: PriceService,
     ) {
-        // Using free public RPC (rate limited but sufficient for demo)
+        // List of public RPCs to try
+        const rpcs = [
+            'https://ethereum.publicnode.com',
+            'https://rpc.ankr.com/eth',
+            'https://eth.llamarpc.com',
+            'https://cloudflare-eth.com',
+        ];
+
+        // Try to connect to a working RPC
         this.ethClient = createPublicClient({
             chain: mainnet,
-            transport: http('https://ethereum.publicnode.com'),
+            transport: http(rpcs[0]), // Default to first
         });
 
         // Initialize known wallet labels
@@ -114,6 +122,7 @@ export class BlockchainService {
                     const block = await this.ethClient.getBlock({ blockNumber, includeTransactions: true });
 
                     if (block && block.transactions) {
+                        console.log(`[WhaleWatch] Block ${blockNumber} has ${block.transactions.length} transactions`);
                         for (const txHash of block.transactions) {
                             if (typeof txHash === 'string') {
                                 try {
@@ -154,7 +163,8 @@ export class BlockchainService {
 
             return largeTransactions;
         } catch (error) {
-            console.error('Error fetching ETH transactions:', error);
+            console.error('Error fetching ETH transactions:', error.message);
+            // Fallback: Return empty array but log specific error
             return [];
         }
     }

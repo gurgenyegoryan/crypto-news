@@ -50,7 +50,7 @@ export default function TermsPage() {
                     <section>
                         <h2 className="text-2xl font-bold text-white mb-4">4. Premium Subscriptions</h2>
                         <p className="mb-4">
-                            Premium subscriptions are billed monthly at $29 USD (paid in USDT TRC20). By subscribing to Premium:
+                            Premium subscriptions are billed monthly at $1 USD (paid in USDT TRC20). By subscribing to Premium:
                         </p>
                         <ul className="list-disc list-inside space-y-2 ml-4">
                             <li>You authorize us to charge the subscription fee each billing period</li>

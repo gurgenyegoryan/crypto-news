@@ -370,7 +370,7 @@ export default function SettingsPage(props: SettingsPageProps) {
                                         <div className="bg-black/30 backdrop-blur-sm rounded-xl p-6 border border-purple-500/20">
                                             <div className="text-center mb-4">
                                                 <div className="text-5xl font-bold text-white mb-2">
-                                                    $29<span className="text-2xl text-gray-400">/month</span>
+                                                    $1<span className="text-2xl text-gray-400">/month</span>
                                                 </div>
                                                 <p className="text-purple-300 text-sm">Pay with USDT (TRC20) • Cancel anytime</p>
                                             </div>

@@ -5,7 +5,7 @@ import { PrismaService } from '../prisma/prisma.service';
 export class PaymentsService {
     private readonly logger = new Logger(PaymentsService.name);
     private readonly ADMIN_WALLET_TRC20 = process.env.ADMIN_USDT_WALLET || 'TSWJ1i1z4aDDsDvC1N6A6UgRteJabtuo29';
-    private readonly MONTHLY_PRICE_USD = 29;
+    private readonly MONTHLY_PRICE_USD = 1;
 
     constructor(private prisma: PrismaService) { }
 

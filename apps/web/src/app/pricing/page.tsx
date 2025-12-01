@@ -28,7 +28,7 @@ export default function PricingPage() {
                     <div className="flex items-center justify-between mb-4">
                         <h2 className="text-2xl font-bold text-white">Premium</h2>
                         <span className="px-4 py-2 bg-gradient-to-r from-green-500 to-emerald-500 text-white font-bold rounded-full text-sm shadow-lg">
-                            $29 / month
+                            $1 / month
                         </span>
                     </div>
                     <p className="text-gray-300 mb-4">

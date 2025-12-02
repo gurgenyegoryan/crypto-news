@@ -79,7 +79,19 @@ export class AuthController {
 
     @Post('forgot-password')
     async forgotPassword(@Body() body: { email: string }) {
-        return this.authService.forgotPassword(body.email);
+        try {
+            return await this.authService.forgotPassword(body.email);
+        } catch (error) {
+            // Don't expose internal errors to client for security
+            // But log them for debugging
+            console.error('[ForgotPassword] Error:', error.message);
+
+            // Return generic success message to prevent email enumeration
+            return {
+                message: 'If an account exists with this email, a password reset link has been sent.',
+                error: process.env.NODE_ENV === 'development' ? error.message : undefined
+            };
+        }
     }
 
     @Post('reset-password')

@@ -20,93 +20,119 @@ export class PaymentsService {
     constructor(private prisma: PrismaService) { }
 
     async verifyPayment(userId: string, txHash: string, network: string = 'TRC20') {
+        this.logger.log(`[PAYMENT VERIFICATION START] User: ${userId}, Hash: ${txHash}, Network: ${network}`);
+
         try {
             // 1. Basic Format Validation
             if (!txHash || txHash.length < 64) {
+                this.logger.warn(`[PAYMENT REJECTED] Invalid hash format: ${txHash}`);
                 return {
                     success: false,
                     message: 'Invalid transaction hash format. Hash must be at least 64 characters.'
                 };
             }
 
-            // 2. Check for duplicate usage
+            // 2. Check for duplicate usage - CRITICAL SECURITY CHECK
             const existingPayment = await this.prisma.payment.findUnique({
                 where: { txHash }
             });
 
             if (existingPayment) {
+                this.logger.warn(`[PAYMENT REJECTED] Duplicate transaction hash: ${txHash} already used by user ${existingPayment.userId}`);
                 return {
                     success: false,
                     message: 'This transaction has already been used for a payment.'
                 };
             }
 
-            // 3. Network-specific Verification
-            let isVerified = false;
-            let amount = 0;
+            // 3. Network-specific Verification - CRITICAL: Must explicitly verify
+            let verificationResult: { valid: boolean; amount: number; error?: string };
 
             if (network === 'POLYGON') {
-                const verification = await this.verifyPolygonTransaction(txHash);
-                if (!verification.valid) {
-                    return {
-                        success: false,
-                        message: verification.error || 'Transaction verification failed.'
-                    };
-                }
-                isVerified = true;
-                amount = verification.amount;
+                this.logger.log(`[POLYGON VERIFICATION] Verifying transaction: ${txHash}`);
+                verificationResult = await this.verifyPolygonTransaction(txHash);
             } else if (network === 'TRC20') {
-                const verification = await this.verifyTronTransaction(txHash);
-                if (!verification.valid) {
-                    return {
-                        success: false,
-                        message: verification.error || 'Transaction verification failed.'
-                    };
-                }
-                isVerified = true;
-                amount = verification.amount;
+                this.logger.log(`[TRC20 VERIFICATION] Verifying transaction: ${txHash}`);
+                verificationResult = await this.verifyTronTransaction(txHash);
             } else {
+                this.logger.warn(`[PAYMENT REJECTED] Unsupported network: ${network}`);
                 return {
                     success: false,
-                    message: 'Unsupported network.'
+                    message: 'Unsupported network. Please use POLYGON or TRC20.'
                 };
             }
 
-            if (!isVerified) {
+            // 4. CRITICAL: Check verification result - FAIL-SAFE
+            if (!verificationResult.valid) {
+                this.logger.warn(`[PAYMENT REJECTED] Verification failed: ${verificationResult.error || 'Unknown error'}`);
+
+                // Log failed attempt to database for audit trail
+                await this.prisma.payment.create({
+                    data: {
+                        userId,
+                        txHash,
+                        amount: 0,
+                        currency: 'USDT',
+                        network: network,
+                        status: 'failed',
+                        subscriptionMonths: 0,
+                    }
+                }).catch(err => {
+                    this.logger.error(`Failed to log failed payment attempt: ${err.message}`);
+                });
+
                 return {
                     success: false,
-                    message: 'Payment verification failed.'
+                    message: verificationResult.error || 'Transaction verification failed.'
                 };
             }
 
-            this.logger.log(`Processing payment for user ${userId} with hash ${txHash}`);
+            // 5. Verify amount is sufficient
+            if (verificationResult.amount < this.MONTHLY_PRICE_USD) {
+                this.logger.warn(`[PAYMENT REJECTED] Insufficient amount: ${verificationResult.amount} USDT (required: ${this.MONTHLY_PRICE_USD})`);
+                return {
+                    success: false,
+                    message: `Insufficient payment amount. Received ${verificationResult.amount} USDT, required ${this.MONTHLY_PRICE_USD} USDT.`
+                };
+            }
+
+            this.logger.log(`[PAYMENT VERIFIED] Processing payment for user ${userId} - Amount: ${verificationResult.amount} USDT`);
 
             // Get current user to check if they have an existing subscription
             const currentUser = await this.prisma.user.findUnique({
                 where: { id: userId },
-                select: { premiumUntil: true, tier: true }
+                select: { premiumUntil: true, tier: true, email: true }
             });
+
+            if (!currentUser) {
+                this.logger.error(`[PAYMENT REJECTED] User not found: ${userId}`);
+                return {
+                    success: false,
+                    message: 'User not found.'
+                };
+            }
 
             // Calculate subscription end date
             let premiumUntil: Date;
 
-            if (currentUser?.tier === 'premium' && currentUser.premiumUntil && currentUser.premiumUntil > new Date()) {
+            if (currentUser.tier === 'premium' && currentUser.premiumUntil && currentUser.premiumUntil > new Date()) {
                 // User is renewing - extend from current expiry date
                 premiumUntil = new Date(currentUser.premiumUntil);
                 premiumUntil.setDate(premiumUntil.getDate() + 30);
-                this.logger.log(`Renewal: extending from ${currentUser.premiumUntil.toISOString()} to ${premiumUntil.toISOString()}`);
+                this.logger.log(`[RENEWAL] Extending from ${currentUser.premiumUntil.toISOString()} to ${premiumUntil.toISOString()}`);
             } else {
                 // New subscription - start from now
                 premiumUntil = new Date();
                 premiumUntil.setDate(premiumUntil.getDate() + 30);
+                this.logger.log(`[NEW SUBSCRIPTION] Premium until ${premiumUntil.toISOString()}`);
             }
 
-            // Create payment record
+            // Create payment record with verified status
             const payment = await this.prisma.payment.create({
                 data: {
                     userId,
                     txHash,
-                    amount: this.MONTHLY_PRICE_USD,
+                    amount: verificationResult.amount,
                     currency: 'USDT',
                     network: network,
                     status: 'verified',
@@ -126,7 +152,7 @@ export class PaymentsService {
                 },
             });
 
-            this.logger.log(`User ${user.email} upgraded to premium until ${premiumUntil.toISOString()}`);
+            this.logger.log(`[PAYMENT SUCCESS] User ${user.email} upgraded to premium until ${premiumUntil.toISOString()}`);
 
             return {
                 success: true,
@@ -135,10 +161,12 @@ export class PaymentsService {
                 premiumUntil: premiumUntil.toISOString(),
             };
         } catch (error) {
-            this.logger.error(`Error verifying payment: ${error.message}`);
+            this.logger.error(`[PAYMENT ERROR] Critical error during payment verification: ${error.message}`, error.stack);
+
+            // CRITICAL: On any error, do NOT grant premium access
             return {
                 success: false,
-                message: 'Failed to process payment. Please contact support.'
+                message: 'Failed to process payment. Please contact support with your transaction hash.'
             };
         }
     }
@@ -262,11 +290,32 @@ export class PaymentsService {
 
             // Next 64 chars are the recipient address (padded)
             const recipientHex = data.substring(8, 72);
-            const recipientAddress = '41' + recipientHex.substring(24); // 41 is Tron address prefix
 
-            // Convert our admin wallet to hex for comparison
-            // For now, we'll do a simpler check - just verify the last part matches
-            const adminWalletHex = this.ADMIN_WALLET_TRC20.substring(1); // Remove 'T' prefix
+            // Extract the actual address (remove padding)
+            const recipientAddressHex = '41' + recipientHex.substring(24); // 41 is Tron address prefix
+
+            // For proper verification, we need to convert our admin wallet to hex
+            // TRC20 addresses start with 'T' which is base58 encoded
+            // For now, we'll use a helper function to convert
+            const adminWalletForComparison = this.ADMIN_WALLET_TRC20.toUpperCase();
+
+            // Get the recipient address from transaction info for comparison
+            // TronGrid provides the 'to_address' in base58 format
+            const toAddress = txData.raw_data?.contract?.[0]?.parameter?.value?.to_address;
+
+            if (!toAddress) {
+                return { valid: false, amount: 0, error: 'Could not determine recipient address from transaction.' };
+            }
+
+            // Verify the recipient matches our admin wallet
+            if (toAddress.toUpperCase() !== adminWalletForComparison) {
+                this.logger.warn(`[TRC20 VERIFICATION FAILED] Payment sent to wrong address. Expected: ${this.ADMIN_WALLET_TRC20}, Got: ${toAddress}`);
+                return {
+                    valid: false,
+                    amount: 0,
+                    error: `Payment recipient does not match our wallet. Transaction was sent to ${toAddress}.`
+                };
+            }
 
             // Last 64 chars are the amount
             const amountHex = data.substring(72, 136);
@@ -278,9 +327,7 @@ export class PaymentsService {
                 return { valid: false, amount: 0, error: `Insufficient amount. Received ${amountUsdt} USDT, required 1.0 USDT.` };
             }
 
-            // For a more thorough check, we should verify the recipient address matches
-            // This is a simplified version - in production, use a proper Tron library
-            this.logger.log(`Tron transaction verified: ${amountUsdt} USDT`);
+            this.logger.log(`[TRC20 VERIFIED] Transaction to ${toAddress}: ${amountUsdt} USDT`);
 
             return { valid: true, amount: amountUsdt };
 

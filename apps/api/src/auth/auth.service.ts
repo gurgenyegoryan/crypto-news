@@ -261,7 +261,9 @@ export class AuthService {
 
         // Only send reset email to verified accounts
         if (!user.isVerified) {
-            throw new BadRequestException('Please verify your email address first before resetting password.');
+            // In production, don't reveal that account exists but is unverified
+            // Just return success message
+            return { message: 'If an account exists with this email, a password reset link has been sent.' };
         }
 
         // Generate reset token
@@ -274,8 +276,14 @@ export class AuthService {
             passwordResetTokenExpiry: resetTokenExpiry,
         });
 
-        // Send reset email
-        await this.emailService.sendPasswordResetEmail(email, resetToken);
+        // Send reset email - catch errors to prevent API failure
+        try {
+            await this.emailService.sendPasswordResetEmail(email, resetToken);
+        } catch (emailError) {
+            console.error('[ForgotPassword] Failed to send email:', emailError.message);
+            // Continue anyway - token is saved in database
+            // In production with proper email service, this shouldn't happen
+        }
 
         return { message: 'If an account exists with this email, a password reset link has been sent.' };
     }

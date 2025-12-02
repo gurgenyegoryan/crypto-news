@@ -20,7 +20,7 @@ function VerifyContent() {
 
         const verifyEmail = async () => {
             try {
-                const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://https://api.cryptomonitor.app';
+                const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.cryptomonitor.app';
                 const response = await fetch(`${API_URL}/auth/verify`, {
                     method: 'POST',
                     headers: {

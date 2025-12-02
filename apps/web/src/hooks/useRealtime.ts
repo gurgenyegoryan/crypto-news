@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { io, Socket } from 'socket.io-client';
 
-const SOCKET_URL = process.env.NEXT_PUBLIC_API_URL || 'http://https://api.cryptomonitor.app';
+const SOCKET_URL = process.env.NEXT_PUBLIC_API_URL || 'https://api.cryptomonitor.app';
 
 export const useRealtime = () => {
     const socketRef = useRef<Socket | null>(null);

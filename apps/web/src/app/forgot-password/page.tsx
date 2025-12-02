@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://https://api.cryptomonitor.app";
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://api.cryptomonitor.app";
 
 export default function ForgotPasswordPage() {
     const [email, setEmail] = useState("");

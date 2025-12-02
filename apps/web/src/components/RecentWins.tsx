@@ -21,7 +21,7 @@ export default function RecentWins() {
         // Fetch initial data
         const fetchInitialData = async () => {
             try {
-                const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://https://api.cryptomonitor.app'}/whale-watch`);
+                const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'https://api.cryptomonitor.app'}/whale-watch`);
                 if (res.ok) {
                     const data = await res.json();
                     const initialWins = data.map((tx: any) => ({

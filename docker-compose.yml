@@ -68,7 +68,10 @@ services:
       context: ./apps/web
       dockerfile: Dockerfile
       args:
-        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://api:3000}
+        # This uses /api path which Nginx will proxy to the API container
+        # Browser: https://cryptomonitor.app/api/auth/login
+        # Nginx proxies to: https://api.cryptomonitor.app/auth/login (API container)
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-https://cryptomonitor.app/api}
     container_name: cryptomonitor-web
     dns:
       - 8.8.8.8
@@ -76,7 +79,7 @@ services:
     depends_on:
       - api
     environment:
-      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://api:3000}
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-https://cryptomonitor.app/api}
     ports:
       - "3001:3000"
 

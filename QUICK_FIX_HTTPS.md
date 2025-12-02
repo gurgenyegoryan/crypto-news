@@ -61,7 +61,7 @@ NEXT_PUBLIC_API_URL=https://cryptomonitor.app/api
 
 ### For local development:
 ```
-NEXT_PUBLIC_API_URL=http://localhost:3000
+NEXT_PUBLIC_API_URL=https://api.cryptomonitor.app
 ```
 
 ## Don't Have HTTPS for API Yet?

@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useState, useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://https://api.cryptomonitor.app";
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://api.cryptomonitor.app";
 
 function ResetPasswordForm() {
     const router = useRouter();

@@ -25,7 +25,7 @@ export default function SentimentAnalysis() {
     const fetchSentiment = async () => {
         setLoading(true);
         try {
-            const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://https://api.cryptomonitor.app';
+            const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://api.cryptomonitor.app';
             const response = await fetch(`${apiUrl}/sentiment/${selectedToken}`);
             if (!response.ok) throw new Error('Failed to fetch sentiment');
             const data = await response.json();
@@ -40,7 +40,7 @@ export default function SentimentAnalysis() {
 
     const fetchHistory = async () => {
         try {
-            const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://https://api.cryptomonitor.app';
+            const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'https://api.cryptomonitor.app';
             const response = await fetch(`${apiUrl}/sentiment/${selectedToken}/history?hours=24`);
             if (!response.ok) throw new Error('Failed to fetch history');
             const data = await response.json();

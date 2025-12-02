@@ -24,7 +24,7 @@ A SaaS crypto portfolio tracker with real-time Telegram alerts.
 
 2. Access the applications:
    - Web: [http://web:3000](http://web:3000)
-   - API: [http://localhost:3000](http://localhost:3000)
+   - API: [http://api:3000](http://api:3000)
 
 ## Development
 

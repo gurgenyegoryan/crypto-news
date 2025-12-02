@@ -44,7 +44,7 @@ export default function CopyTrading() {
     const fetchConfigs = async () => {
         try {
             const token = localStorage.getItem('auth_token');
-            const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
+            const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://api:3000';
             const response = await fetch(`${apiUrl}/copy-trading/configs`, {
                 headers: { 'Authorization': `Bearer ${token}` },
             });
@@ -61,7 +61,7 @@ export default function CopyTrading() {
     const fetchTrades = async () => {
         try {
             const token = localStorage.getItem('auth_token');
-            const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
+            const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://api:3000';
             const response = await fetch(`${apiUrl}/copy-trading/history?limit=20`, {
                 headers: { 'Authorization': `Bearer ${token}` },
             });
@@ -78,7 +78,7 @@ export default function CopyTrading() {
     const createConfig = async () => {
         try {
             const token = localStorage.getItem('auth_token');
-            const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
+            const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://api:3000';
             const response = await fetch(`${apiUrl}/copy-trading/configs`, {
                 method: 'POST',
                 headers: {
@@ -107,7 +107,7 @@ export default function CopyTrading() {
     const toggleConfig = async (id: string) => {
         try {
             const token = localStorage.getItem('auth_token');
-            const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
+            const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://api:3000';
             await fetch(`${apiUrl}/copy-trading/configs/${id}/toggle`, {
                 method: 'PATCH',
                 headers: { 'Authorization': `Bearer ${token}` },
@@ -121,7 +121,7 @@ export default function CopyTrading() {
     const deleteConfig = async (id: string) => {
         try {
             const token = localStorage.getItem('auth_token');
-            const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
+            const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://api:3000';
             await fetch(`${apiUrl}/copy-trading/configs/${id}`, {
                 method: 'DELETE',
                 headers: { 'Authorization': `Bearer ${token}` },

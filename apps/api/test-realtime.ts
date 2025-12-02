@@ -3,7 +3,7 @@ import { io } from 'socket.io-client';
 async function testRealtime() {
     console.log('Starting Real-Time Infrastructure Test...');
 
-    const socket = io('http://localhost:3000/events', {
+    const socket = io('http://api:3000/events', {
         transports: ['websocket'],
     });
 

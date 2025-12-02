@@ -1,18 +1,18 @@
 "use strict";
-var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function (o, m, k, k2) {
     if (k2 === undefined) k2 = k;
     var desc = Object.getOwnPropertyDescriptor(m, k);
     if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
-      desc = { enumerable: true, get: function() { return m[k]; } };
+        desc = { enumerable: true, get: function () { return m[k]; } };
     }
     Object.defineProperty(o, k2, desc);
-}) : (function(o, m, k, k2) {
+}) : (function (o, m, k, k2) {
     if (k2 === undefined) k2 = k;
     o[k2] = m[k];
 }));
-var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function (o, v) {
     Object.defineProperty(o, "default", { enumerable: true, value: v });
-}) : function(o, v) {
+}) : function (o, v) {
     o["default"] = v;
 });
 var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
@@ -22,7 +22,7 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
     return c > 3 && r && Object.defineProperty(target, key, r), r;
 };
 var __importStar = (this && this.__importStar) || (function () {
-    var ownKeys = function(o) {
+    var ownKeys = function (o) {
         ownKeys = Object.getOwnPropertyNames || function (o) {
             var ar = [];
             for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
@@ -67,7 +67,7 @@ let EmailService = EmailService_1 = class EmailService {
         }
     }
     async sendVerificationEmail(email, token) {
-        const verificationUrl = `${process.env.FRONTEND_URL || 'http://localhost:3000'}/verify?token=${token}`;
+        const verificationUrl = `${process.env.FRONTEND_URL || 'http://api:3000'}/verify?token=${token}`;
         const html = `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f9f9f9; border-radius: 10px;">
         <h2 style="color: #333;">Verify your email address</h2>
@@ -106,7 +106,7 @@ let EmailService = EmailService_1 = class EmailService {
                 <p>Your premium subscription will expire in <strong>${daysRemaining} days</strong>.</p>
                 <p>Renew now to continue enjoying real-time whale alerts, advanced security scanning, and more.</p>
                 <div style="text-align: center; margin: 30px 0;">
-                    <a href="${process.env.FRONTEND_URL || 'http://localhost:3000'}/dashboard" style="background-color: #7c3aed; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; font-weight: bold;">Renew Subscription</a>
+                    <a href="${process.env.FRONTEND_URL || 'http://api:3000'}/dashboard" style="background-color: #7c3aed; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; font-weight: bold;">Renew Subscription</a>
                 </div>
             </div>
         `;
@@ -142,7 +142,7 @@ let EmailService = EmailService_1 = class EmailService {
                     <li><strong>To:</strong> ${alertData.to}</li>
                 </ul>
                 <div style="text-align: center; margin: 30px 0;">
-                    <a href="${process.env.FRONTEND_URL || 'http://localhost:3000'}/dashboard" style="background-color: #7c3aed; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; font-weight: bold;">View Details</a>
+                    <a href="${process.env.FRONTEND_URL || 'http://api:3000'}/dashboard" style="background-color: #7c3aed; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; font-weight: bold;">View Details</a>
                 </div>
             </div>
         `;

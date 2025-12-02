@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_URL = 'http://localhost:3000';
+const API_URL = 'http://api:3000';
 
 // Test credentials - UPDATE THESE WITH YOUR ACTUAL CREDENTIALS
 const TEST_USER = {

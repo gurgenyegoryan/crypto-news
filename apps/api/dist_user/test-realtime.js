@@ -3,7 +3,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const socket_io_client_1 = require("socket.io-client");
 async function testRealtime() {
     console.log('Starting Real-Time Infrastructure Test...');
-    const socket = (0, socket_io_client_1.io)('http://localhost:3000/events', {
+    const socket = (0, socket_io_client_1.io)('http://api:3000/events', {
         transports: ['websocket'],
     });
     socket.on('connect', () => {

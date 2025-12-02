@@ -33,7 +33,7 @@ export default function SecurityScanner() {
 
         try {
             const token = localStorage.getItem('auth_token');
-            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'}/security/analyze`, {
+            const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://api:3000'}/security/analyze`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -152,8 +152,8 @@ export default function SecurityScanner() {
                                 {/* Filled Arc - using rotation to simulate fill */}
                                 <div
                                     className={`absolute inset-0 rounded-t-full border-[16px] border-b-0 transition-all duration-1000 ease-out origin-bottom ${analysis.securityScore >= 80 ? 'border-green-500' :
-                                            analysis.securityScore >= 60 ? 'border-yellow-500' :
-                                                analysis.securityScore >= 40 ? 'border-orange-500' : 'border-red-500'
+                                        analysis.securityScore >= 60 ? 'border-yellow-500' :
+                                            analysis.securityScore >= 40 ? 'border-orange-500' : 'border-red-500'
                                         }`}
                                     style={{
                                         transform: `rotate(${(analysis.securityScore / 100) * 180 - 180}deg)`,

@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_URL = 'http://localhost:3000';
+const API_URL = 'http://api:3000';
 
 async function verifyCopyTrading() {
     try {

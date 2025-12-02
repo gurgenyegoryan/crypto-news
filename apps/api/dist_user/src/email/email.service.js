@@ -67,7 +67,7 @@ let EmailService = EmailService_1 = class EmailService {
         }
     }
     async sendVerificationEmail(email, token) {
-        const verificationUrl = `${process.env.FRONTEND_URL || 'http://api:3000'}/verify?token=${token}`;
+        const verificationUrl = `${process.env.FRONTEND_URL || 'http://https://api.cryptomonitor.app'}/verify?token=${token}`;
         const html = `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f9f9f9; border-radius: 10px;">
         <h2 style="color: #333;">Verify your email address</h2>
@@ -106,7 +106,7 @@ let EmailService = EmailService_1 = class EmailService {
                 <p>Your premium subscription will expire in <strong>${daysRemaining} days</strong>.</p>
                 <p>Renew now to continue enjoying real-time whale alerts, advanced security scanning, and more.</p>
                 <div style="text-align: center; margin: 30px 0;">
-                    <a href="${process.env.FRONTEND_URL || 'http://api:3000'}/dashboard" style="background-color: #7c3aed; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; font-weight: bold;">Renew Subscription</a>
+                    <a href="${process.env.FRONTEND_URL || 'http://https://api.cryptomonitor.app'}/dashboard" style="background-color: #7c3aed; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; font-weight: bold;">Renew Subscription</a>
                 </div>
             </div>
         `;
@@ -142,7 +142,7 @@ let EmailService = EmailService_1 = class EmailService {
                     <li><strong>To:</strong> ${alertData.to}</li>
                 </ul>
                 <div style="text-align: center; margin: 30px 0;">
-                    <a href="${process.env.FRONTEND_URL || 'http://api:3000'}/dashboard" style="background-color: #7c3aed; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; font-weight: bold;">View Details</a>
+                    <a href="${process.env.FRONTEND_URL || 'http://https://api.cryptomonitor.app'}/dashboard" style="background-color: #7c3aed; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; font-weight: bold;">View Details</a>
                 </div>
             </div>
         `;

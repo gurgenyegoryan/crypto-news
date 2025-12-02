@@ -4,7 +4,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const axios_1 = __importDefault(require("axios"));
-const API_URL = 'http://api:3000';
+const API_URL = 'http://https://api.cryptomonitor.app';
 async function verifyCopyTrading() {
     try {
         console.log('1. Logging in...');

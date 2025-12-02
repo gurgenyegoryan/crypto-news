@@ -108,7 +108,7 @@ export default function DashboardContent() {
     const [showTicketModal, setShowTicketModal] = useState(false);
     const [showUserMenu, setShowUserMenu] = useState(false);
 
-    const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://api:3000';
+    const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://https://api.cryptomonitor.app';
 
     useEffect(() => {
         if (user) {

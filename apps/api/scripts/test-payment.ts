@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_URL = 'http://api:3000';
+const API_URL = 'http://https://api.cryptomonitor.app';
 
 // Test credentials - UPDATE THESE WITH YOUR ACTUAL CREDENTIALS
 const TEST_USER = {

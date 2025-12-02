@@ -133,7 +133,7 @@ const handleResetPassword = async (token: string, newPassword: string) => {
 
 1. **Request Reset:**
    ```bash
-   curl -X POST http://api:3000/auth/forgot-password \
+   curl -X POST http://https://api.cryptomonitor.app/auth/forgot-password \
      -H "Content-Type: application/json" \
      -d '{"email":"gurgen@2vmdls.com"}'
    ```
@@ -145,7 +145,7 @@ const handleResetPassword = async (token: string, newPassword: string) => {
 
 3. **Reset Password:**
    ```bash
-   curl -X POST http://api:3000/auth/reset-password \
+   curl -X POST http://https://api.cryptomonitor.app/auth/reset-password \
      -H "Content-Type: application/json" \
      -d '{"token":"YOUR_TOKEN","newPassword":"newpass123"}'
    ```

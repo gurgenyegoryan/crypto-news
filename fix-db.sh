@@ -14,9 +14,14 @@ echo "🚀 Fixing database schema and restarting infrastructure..."
 # - Start the application
 
 echo "🧹 Attempting to resolve any failed migrations..."
-# Use 'run --rm' instead of 'exec' because 'exec' requires the container to be running, 
-# but it might be crashing due to the migration error.
+# Use 'run --rm' instead of 'exec' because 'exec' requires the container to be running
 docker compose run --rm api npx prisma migrate resolve --rolled-back 20251202154500_add_email_alerts || true
+
+echo "🧹 Attempting to force-clear failed migrations via SQL (fallback)..."
+# This deletes the failed migration record directly from the DB
+# Try via docker compose service name first, then via container name directly
+docker compose exec -T postgres psql -U postgres -d cryptomonitor -c "DELETE FROM _prisma_migrations WHERE migration_name = '20251202154500_add_email_alerts';" || \
+docker exec cryptomonitor-postgres psql -U postgres -d cryptomonitor -c "DELETE FROM _prisma_migrations WHERE migration_name = '20251202154500_add_email_alerts';" || true
 
 echo "🔄 Rebuilding API container..."
 docker compose up -d --build api

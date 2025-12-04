@@ -13,6 +13,10 @@ echo "🚀 Fixing database schema and restarting infrastructure..."
 # - Execute 'npx prisma db seed'
 # - Start the application
 
+echo "🧹 Attempting to resolve any failed migrations..."
+# We use || true because if the container isn't running or migration isn't failed, this might error
+docker-compose exec -T api npx prisma migrate resolve --rolled-back 20251202154500_add_email_alerts || true
+
 echo "🔄 Rebuilding API container..."
 docker-compose up -d --build api
 

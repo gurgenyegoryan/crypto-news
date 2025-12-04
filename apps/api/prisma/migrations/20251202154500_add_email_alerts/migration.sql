@@ -29,11 +29,62 @@ CREATE TABLE IF NOT EXISTS "users" (
     CONSTRAINT "users_pkey" PRIMARY KEY ("id")
 );
 
--- Add email_alerts column if it doesn't exist (for existing tables)
+-- SAFELY ADD MISSING COLUMNS TO "users"
 DO $$ 
 BEGIN 
+    -- is_verified
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='users' AND column_name='is_verified') THEN
+        ALTER TABLE "users" ADD COLUMN "is_verified" BOOLEAN NOT NULL DEFAULT false;
+    END IF;
+
+    -- verification_token
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='users' AND column_name='verification_token') THEN
+        ALTER TABLE "users" ADD COLUMN "verification_token" TEXT;
+    END IF;
+
+    -- verification_token_expiry
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='users' AND column_name='verification_token_expiry') THEN
+        ALTER TABLE "users" ADD COLUMN "verification_token_expiry" TIMESTAMP(3);
+    END IF;
+
+    -- email_alerts
     IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='users' AND column_name='email_alerts') THEN
         ALTER TABLE "users" ADD COLUMN "email_alerts" BOOLEAN NOT NULL DEFAULT false;
+    END IF;
+
+    -- two_factor_secret
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='users' AND column_name='two_factor_secret') THEN
+        ALTER TABLE "users" ADD COLUMN "two_factor_secret" TEXT;
+    END IF;
+
+    -- is_two_factor_enabled
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='users' AND column_name='is_two_factor_enabled') THEN
+        ALTER TABLE "users" ADD COLUMN "is_two_factor_enabled" BOOLEAN NOT NULL DEFAULT false;
+    END IF;
+
+    -- password_reset_token
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='users' AND column_name='password_reset_token') THEN
+        ALTER TABLE "users" ADD COLUMN "password_reset_token" TEXT;
+    END IF;
+
+    -- password_reset_token_expiry
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='users' AND column_name='password_reset_token_expiry') THEN
+        ALTER TABLE "users" ADD COLUMN "password_reset_token_expiry" TIMESTAMP(3);
+    END IF;
+
+    -- premium_until
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='users' AND column_name='premium_until') THEN
+        ALTER TABLE "users" ADD COLUMN "premium_until" TIMESTAMP(3);
+    END IF;
+
+    -- last_payment_date
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='users' AND column_name='last_payment_date') THEN
+        ALTER TABLE "users" ADD COLUMN "last_payment_date" TIMESTAMP(3);
+    END IF;
+
+    -- subscription_status
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='users' AND column_name='subscription_status') THEN
+        ALTER TABLE "users" ADD COLUMN "subscription_status" TEXT NOT NULL DEFAULT 'inactive';
     END IF;
 END $$;
 

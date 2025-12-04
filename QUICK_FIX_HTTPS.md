@@ -30,8 +30,8 @@ EOF
 ### Step 2: Rebuild Web Container
 
 ```bash
-docker-compose down
-docker-compose up -d --build web
+docker compose down
+docker compose up -d --build web
 ```
 
 ### Step 3: Verify
@@ -44,7 +44,7 @@ Open your browser and check:
 ## Alternative: Quick One-Liner
 
 ```bash
-echo "NEXT_PUBLIC_API_URL=https://api.cryptomonitor.app" > .env && docker-compose up -d --build web
+echo "NEXT_PUBLIC_API_URL=https://api.cryptomonitor.app" > .env && docker compose up -d --build web
 ```
 
 ## What URL Should I Use?
@@ -87,14 +87,14 @@ sudo certbot --nginx -d api.cryptomonitor.app
 
 ### Clear build cache:
 ```bash
-docker-compose down
-docker-compose build --no-cache web
-docker-compose up -d
+docker compose down
+docker compose build --no-cache web
+docker compose up -d
 ```
 
 ### Check the variable is set:
 ```bash
-docker-compose exec web env | grep NEXT_PUBLIC_API_URL
+docker compose exec web env | grep NEXT_PUBLIC_API_URL
 ```
 
 ### Check browser console:

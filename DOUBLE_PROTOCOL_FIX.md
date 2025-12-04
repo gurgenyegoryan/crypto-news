@@ -39,8 +39,8 @@ To:
 Rebuild your web container:
 
 ```bash
-docker-compose down
-docker-compose up -d --build web
+docker compose down
+docker compose up -d --build web
 ```
 
 ## Verify

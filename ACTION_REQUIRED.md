@@ -17,13 +17,13 @@ Your Docker containers are running **OLD CODE** that doesn't have the real trans
 # On your server
 cd /path/to/crypto-news
 git pull origin main
-docker-compose down
-docker-compose up --build -d
+docker compose down
+docker compose up --build -d
 ```
 
 ### Option 2: Just Restart API Container
 ```bash
-docker-compose restart api
+docker compose restart api
 ```
 
 **Note:** Option 1 is better because it ensures everything is up-to-date.
@@ -56,8 +56,8 @@ npx prisma generate
 
 ### 2. Rebuild Docker Containers
 ```bash
-docker-compose down
-docker-compose up --build -d
+docker compose down
+docker compose up --build -d
 ```
 
 ### 3. Test Payment Verification
@@ -134,7 +134,7 @@ docker logs --tail 50 cryptomonitor-api
 
 ### Restart everything:
 ```bash
-docker-compose restart
+docker compose restart
 ```
 
 ## 🚨 IMPORTANT

@@ -69,7 +69,7 @@ if (!isVerified) {
 ## Fixes Applied
 
 ### Fix 1: Database Configuration
-- Updated docker-compose.yml to ensure consistent database naming
+- Updated docker compose.yml to ensure consistent database naming
 - Added migration check in startup scripts
 - Added database initialization documentation
 
@@ -126,7 +126,7 @@ npx prisma migrate deploy
 ```
 
 2. **On Server - Environment Variables**:
-Ensure these are set in your .env or docker-compose:
+Ensure these are set in your .env or docker compose:
 ```env
 DATABASE_URL=postgresql://user:password@host:5432/cryptomonitor
 FRONTEND_URL=https://your-frontend-domain.com
@@ -139,14 +139,14 @@ SMTP_FROM="CryptoMonitor <noreply@yourdomain.com>"
 
 3. **Restart Services**:
 ```bash
-docker-compose down
-docker-compose up -d --build
+docker compose down
+docker compose up -d --build
 ```
 
 4. **Verify Logs**:
 ```bash
-docker-compose logs -f worker
-docker-compose logs -f api
+docker compose logs -f worker
+docker compose logs -f api
 ```
 
 ## Security Notes

@@ -72,8 +72,8 @@ Wrong/fake transaction hashes were being accepted and granting Premium access.
 ## Deployment
 After pulling these changes, rebuild your Docker containers:
 ```bash
-docker-compose down
-docker-compose up --build -d
+docker compose down
+docker compose up --build -d
 ```
 
 ## Notes

@@ -130,14 +130,14 @@
 
 3. **Rebuild and Restart Services**
    ```bash
-   docker-compose down
-   docker-compose up -d --build
+   docker compose down
+   docker compose up -d --build
    ```
 
 4. **Verify Logs**
    ```bash
-   docker-compose logs -f worker
-   docker-compose logs -f api
+   docker compose logs -f worker
+   docker compose logs -f api
    ```
 
 5. **Test Payment Verification**
@@ -185,7 +185,7 @@
 ## Support
 
 If issues persist:
-1. Check logs: `docker-compose logs -f`
+1. Check logs: `docker compose logs -f`
 2. Verify environment variables
 3. Ensure database migrations applied
 4. Test individual components

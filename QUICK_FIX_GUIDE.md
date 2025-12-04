@@ -8,24 +8,24 @@
 ./setup-database.sh
 
 # Option B: Manual fix
-docker-compose exec postgres psql -U postgres -c "CREATE DATABASE cryptomonitor;"
-docker-compose exec api npx prisma migrate deploy
-docker-compose exec api npx prisma generate
+docker compose exec postgres psql -U postgres -c "CREATE DATABASE cryptomonitor;"
+docker compose exec api npx prisma migrate deploy
+docker compose exec api npx prisma generate
 ```
 
 ### Step 2: Restart Services
 ```bash
-docker-compose down
-docker-compose up -d --build
+docker compose down
+docker compose up -d --build
 ```
 
 ### Step 3: Verify Everything Works
 ```bash
 # Check worker logs - should NOT see database errors
-docker-compose logs worker | grep -i "database\|error"
+docker compose logs worker | grep -i "database\|error"
 
 # Check API logs
-docker-compose logs api | tail -50
+docker compose logs api | tail -50
 
 # Test forgot password
 curl -X POST http://your-api-url/auth/forgot-password \
@@ -66,7 +66,7 @@ curl -X POST http://your-api-url/payments/verify \
 
 ## 📋 Environment Variables to Check
 
-Make sure these are set in your `.env` or docker-compose:
+Make sure these are set in your `.env` or docker compose:
 
 ```env
 DATABASE_URL=postgresql://user:pass@postgres:5432/cryptomonitor
@@ -79,21 +79,21 @@ SMTP_HOST=your-smtp-host  # Optional but recommended
 
 ```bash
 # Watch all logs
-docker-compose logs -f
+docker compose logs -f
 
 # Watch for errors
-docker-compose logs -f | grep -i error
+docker compose logs -f | grep -i error
 
 # Watch payment attempts
-docker-compose logs -f api | grep -i payment
+docker compose logs -f api | grep -i payment
 ```
 
 ## 📞 If Something Goes Wrong
 
-1. Check logs: `docker-compose logs -f`
-2. Verify database exists: `docker-compose exec postgres psql -U postgres -l`
-3. Check environment variables: `docker-compose exec api env | grep DATABASE`
-4. Restart services: `docker-compose restart`
+1. Check logs: `docker compose logs -f`
+2. Verify database exists: `docker compose exec postgres psql -U postgres -l`
+3. Check environment variables: `docker compose exec api env | grep DATABASE`
+4. Restart services: `docker compose restart`
 
 ## 📚 Full Documentation
 

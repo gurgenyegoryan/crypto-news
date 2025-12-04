@@ -82,13 +82,13 @@ ADMIN_USDT_WALLET=your_trc20_wallet_address
 
 ```bash
 # Stop existing containers
-docker-compose down
+docker compose down
 
 # Build and start all services
-docker-compose up -d --build
+docker compose up -d --build
 
 # Check logs
-docker-compose logs -f
+docker compose logs -f
 ```
 
 ### Without Docker
@@ -125,7 +125,7 @@ npm run start
 
 ```bash
 # Check worker logs
-docker-compose logs worker | grep -i "database\|error"
+docker compose logs worker | grep -i "database\|error"
 
 # Should NOT see "Database cryptomonitor does not exist"
 ```
@@ -161,15 +161,15 @@ curl -X POST https://your-api-domain.com/payments/verify \
 
 ```bash
 # Watch all logs
-docker-compose logs -f
+docker compose logs -f
 
 # Watch specific service
-docker-compose logs -f worker
-docker-compose logs -f api
-docker-compose logs -f web
+docker compose logs -f worker
+docker compose logs -f api
+docker compose logs -f web
 
 # Check for errors
-docker-compose logs | grep -i error
+docker compose logs | grep -i error
 ```
 
 ## Common Issues and Solutions
@@ -182,10 +182,10 @@ docker-compose logs | grep -i error
 ./setup-database.sh
 
 # Or manually create database
-docker-compose exec postgres psql -U postgres -c "CREATE DATABASE cryptomonitor;"
+docker compose exec postgres psql -U postgres -c "CREATE DATABASE cryptomonitor;"
 
 # Then run migrations
-docker-compose exec api npx prisma migrate deploy
+docker compose exec api npx prisma migrate deploy
 ```
 
 ### Issue: Forgot Password Returns Network Error
@@ -198,13 +198,13 @@ docker-compose exec api npx prisma migrate deploy
 **Solution:**
 ```bash
 # Check API logs
-docker-compose logs api | grep -i "forgot"
+docker compose logs api | grep -i "forgot"
 
 # Verify CORS is enabled (should see in logs)
 # Verify FRONTEND_URL is set correctly
 
 # Test email service
-docker-compose exec api node -e "console.log(process.env.SMTP_HOST)"
+docker compose exec api node -e "console.log(process.env.SMTP_HOST)"
 ```
 
 ### Issue: Payment Verification Not Working
@@ -212,14 +212,14 @@ docker-compose exec api node -e "console.log(process.env.SMTP_HOST)"
 **Solution:**
 ```bash
 # Check payment service logs
-docker-compose logs api | grep -i "payment"
+docker compose logs api | grep -i "payment"
 
 # Verify blockchain RPC is accessible
-docker-compose exec api curl https://polygon-rpc.com
-docker-compose exec api curl https://api.trongrid.io
+docker compose exec api curl https://polygon-rpc.com
+docker compose exec api curl https://api.trongrid.io
 
 # Check admin wallet addresses are set
-docker-compose exec api node -e "console.log(process.env.ADMIN_USDT_WALLET)"
+docker compose exec api node -e "console.log(process.env.ADMIN_USDT_WALLET)"
 ```
 
 ## Security Checklist
@@ -303,15 +303,15 @@ If issues occur:
 git checkout previous_commit_hash
 
 # Rebuild and restart
-docker-compose down
-docker-compose up -d --build
+docker compose down
+docker compose up -d --build
 ```
 
 ## Support
 
 If you encounter issues:
 
-1. Check logs: `docker-compose logs -f`
+1. Check logs: `docker compose logs -f`
 2. Verify environment variables are set correctly
 3. Ensure database migrations are applied
 4. Test individual components separately

@@ -41,7 +41,7 @@
 - [ ] Run `./setup-database.sh`
 - [ ] Verify database created
 - [ ] Verify migrations applied
-- [ ] Rebuild containers: `docker-compose up -d --build`
+- [ ] Rebuild containers: `docker compose up -d --build`
 - [ ] Check logs for errors
 
 ### Testing
@@ -96,7 +96,7 @@ Expected: `{"message": "If an account exists..."}`
 ### Test 3: Database Connection
 ```bash
 # Worker logs should NOT show database errors
-docker-compose logs worker | grep -i "database.*not exist"
+docker compose logs worker | grep -i "database.*not exist"
 ```
 Expected: No output (no errors)
 
@@ -113,13 +113,13 @@ Expected: No output (no errors)
 If issues occur:
 ```bash
 # Stop services
-docker-compose down
+docker compose down
 
 # Restore previous code
 git checkout previous_commit_hash
 
 # Rebuild and restart
-docker-compose up -d --build
+docker compose up -d --build
 ```
 
 ## 📝 Post-Deployment

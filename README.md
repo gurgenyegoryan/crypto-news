@@ -19,7 +19,7 @@ A SaaS crypto portfolio tracker with real-time Telegram alerts.
 
 1. Start the services:
    ```bash
-   docker-compose up --build
+   docker compose up --build
    ```
 
 2. Access the applications:

@@ -25,13 +25,13 @@ NEXT_PUBLIC_API_URL=https://api.cryptomonitor.app
 2. **Rebuild the web container**:
 
 ```bash
-docker-compose down
-docker-compose up -d --build web
+docker compose down
+docker compose up -d --build web
 ```
 
-### Option 2: Set in docker-compose.yml
+### Option 2: Set in docker compose.yml
 
-Update `docker-compose.yml`:
+Update `docker compose.yml`:
 
 ```yaml
 web:
@@ -46,15 +46,15 @@ web:
 
 Then rebuild:
 ```bash
-docker-compose up -d --build web
+docker compose up -d --build web
 ```
 
 ### Option 3: Quick Test (Temporary)
 
-For quick testing, you can set it when running docker-compose:
+For quick testing, you can set it when running docker compose:
 
 ```bash
-NEXT_PUBLIC_API_URL=https://api.cryptomonitor.app docker-compose up -d --build web
+NEXT_PUBLIC_API_URL=https://api.cryptomonitor.app docker compose up -d --build web
 ```
 
 ## What URL Should You Use?
@@ -174,10 +174,10 @@ NEXT_PUBLIC_API_URL=https://cryptomonitor.app/api
 echo "NEXT_PUBLIC_API_URL=https://api.cryptomonitor.app" >> .env
 
 # 2. Rebuild web container
-docker-compose up -d --build web
+docker compose up -d --build web
 
 # 3. Check logs
-docker-compose logs -f web
+docker compose logs -f web
 
 # 4. Test in browser
 # Open https://cryptomonitor.app and check console
@@ -190,9 +190,9 @@ docker-compose logs -f web
 The build cache might be the issue. Force a clean rebuild:
 
 ```bash
-docker-compose down
-docker-compose build --no-cache web
-docker-compose up -d
+docker compose down
+docker compose build --no-cache web
+docker compose up -d
 ```
 
 ### CORS errors after fixing HTTPS?
@@ -218,7 +218,7 @@ curl -I https://api.cryptomonitor.app
 
 The fix is simple:
 1. Set `NEXT_PUBLIC_API_URL=https://your-api-domain.com` in `.env`
-2. Rebuild web container: `docker-compose up -d --build web`
+2. Rebuild web container: `docker compose up -d --build web`
 3. Ensure API is accessible via HTTPS
 
 That's it! The mixed content error will be resolved.

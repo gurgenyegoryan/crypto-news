@@ -177,9 +177,9 @@ sudo ln -s /etc/nginx/sites-available/cryptomonitor /etc/nginx/sites-enabled/
 sudo nginx -t
 sudo systemctl restart nginx
 
-# 3. Rebuild web container (docker-compose.yml already updated)
-docker-compose down
-docker-compose up -d --build web
+# 3. Rebuild web container (docker compose.yml already updated)
+docker compose down
+docker compose up -d --build web
 
 # 4. Done! Test in browser
 curl https://cryptomonitor.app/api/whale-watch

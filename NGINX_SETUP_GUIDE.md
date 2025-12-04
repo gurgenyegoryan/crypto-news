@@ -75,9 +75,9 @@ sudo ufw status
 ### Step 5: Rebuild Web Container
 
 ```bash
-# The docker-compose.yml is already updated to use /api path
-docker-compose down
-docker-compose up -d --build web
+# The docker compose.yml is already updated to use /api path
+docker compose down
+docker compose up -d --build web
 ```
 
 ### Step 6: Verify
@@ -146,22 +146,22 @@ sudo tail -f /var/log/nginx/error.log
 ### Still getting mixed content errors?
 ```bash
 # Make sure web container is rebuilt
-docker-compose down
-docker-compose build --no-cache web
-docker-compose up -d
+docker compose down
+docker compose build --no-cache web
+docker compose up -d
 
 # Check the API URL is correct
-docker-compose exec web env | grep NEXT_PUBLIC_API_URL
+docker compose exec web env | grep NEXT_PUBLIC_API_URL
 # Should show: NEXT_PUBLIC_API_URL=https://cryptomonitor.app/api
 ```
 
 ### API not responding?
 ```bash
 # Check API is running
-docker-compose ps
+docker compose ps
 
 # Check API logs
-docker-compose logs -f api
+docker compose logs -f api
 
 # Test API directly
 curl https://api.cryptomonitor.app/whale-watch
@@ -195,7 +195,7 @@ But using Nginx with `/api` path is **simpler and better** because:
 1. **Install Nginx** with SSL certificate
 2. **Copy nginx.conf** to `/etc/nginx/sites-available/cryptomonitor`
 3. **Enable the site** and restart Nginx
-4. **Rebuild web container** (already configured in docker-compose.yml)
+4. **Rebuild web container** (already configured in docker compose.yml)
 5. **Done!** Everything works through `https://cryptomonitor.app`
 
 No more mixed content errors! 🎉

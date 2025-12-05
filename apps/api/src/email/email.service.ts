@@ -49,7 +49,8 @@ export class EmailService {
                 this.logger.log(`Verification email sent to ${email}`);
             } catch (error) {
                 this.logger.error(`Failed to send email to ${email}`, error);
-                throw error;
+                // Don't throw error to prevent breaking the auth flow
+                // In production, you might want to queue this for retry
             }
         } else {
             this.logger.log(`[MOCK EMAIL] To: ${email} | Subject: Verify your email | Link: ${verificationUrl}`);
@@ -215,7 +216,7 @@ export class EmailService {
                 this.logger.log(`Password reset email sent to ${email}`);
             } catch (error) {
                 this.logger.error(`Failed to send password reset email to ${email}`, error);
-                throw error;
+                // Don't throw error to prevent breaking the auth flow
             }
         } else {
             this.logger.log(`[MOCK EMAIL] To: ${email} | Subject: Reset Your Password | Link: ${resetUrl}`);

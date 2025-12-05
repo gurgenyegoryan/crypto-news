@@ -48,7 +48,6 @@ export class AuthController {
     async resendVerification(@Request() req: any) {
         return this.authService.resendVerification(req.user);
     }
-
     @UseGuards(AuthGuard('jwt'))
     @Post('change-password')
     async changePassword(@Request() req: any, @Body() body: { currentPassword: string; newPassword: string }) {

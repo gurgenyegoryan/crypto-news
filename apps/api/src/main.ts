@@ -6,7 +6,11 @@ async function bootstrap() {
 
   // Enable CORS
   app.enableCors({
-    origin: '*', // Allow all origins
+    origin: process.env.NEXT_PUBLIC_API_URL ? [
+      process.env.NEXT_PUBLIC_API_URL.replace('/api', ''),
+      'https://cryptomonitor.app',
+      'http://localhost:3001'
+    ] : true,
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
     credentials: true,
   });
